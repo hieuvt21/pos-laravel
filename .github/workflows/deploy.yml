@@ -1,0 +1,68 @@
+name: Deploy to cPanel
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lấy mã nguồn
+        uses: actions/checkout@v4
+
+      - name: Cài PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, xml, curl, zip, bcmath, intl, pdo_mysql
+          tools: composer:v2
+
+      - name: Cài thư viện PHP (Bản Production)
+        run: composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
+
+      - name: Cài Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Build giao diện Vue/Vite
+        run: |
+          npm ci
+          npm run build
+
+      - name: Nén mã nguồn thành deploy.zip
+        # Đã loại trừ file deploy-helper.php khỏi file zip để xử lý tải lên riêng
+        run: zip -rq deploy.zip . -x "**/.git/**" "**/.github/**" "**/node_modules/**" "tests/**" ".env*" "public/hot" "deploy-helper.php"
+
+      - name: Upload File ZIP lên thư mục gốc
+        run: curl -T deploy.zip --ftp-ssl --insecure -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" ftp://${{ secrets.FTP_SERVER }}/
+
+      - name: Upload File Helper thẳng vào thư mục Public
+        # Đẩy file này vào public/ để nó có thể được gọi thông qua domain
+        run: curl -T deploy-helper.php --ftp-ssl --insecure -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" ftp://${{ secrets.FTP_SERVER }}/public/deploy-helper.php
+
+      - name: Gọi File Helper kích hoạt quá trình
+        env:
+          DT: ${{ secrets.DEPLOY_TOKEN }}
+          APP_URL: ${{ secrets.APP_URL }}
+        if: ${{ env.DT != '' && env.APP_URL != '' }}
+        run: |
+          sleep 3
+          for i in 1 2 3; do
+            code=$(curl -sS -o response.json -w "%{http_code}" -X POST "${APP_URL%/}/deploy-helper.php" \
+              -H "X-Deploy-Token: $DT" -H "Accept: application/json")
+            echo "Lần $i - HTTP $code"
+            cat response.json; echo
+            [ "$code" = "200" ] && exit 0
+            # 500 từ helper không nên retry vì zip đã bị xóa sau lần chạy đầu
+            [ "$code" -ge 400 ] && [ "$code" -lt 600 ] && [ "$code" != "502" ] && [ "$code" != "503" ] && [ "$code" != "504" ] && exit 1
+            sleep 5
+          done
+          exit 1

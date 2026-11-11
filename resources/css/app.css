@@ -1,0 +1,28 @@
+/* Thứ tự layer: PrimeVue nằm DƯỚI utilities của Tailwind. Dòng này phải đứng trước mọi @import. */
+@layer theme, base, primevue, components, utilities;
+
+@import 'tailwindcss';
+
+/* Font Be Vietnam Pro (tự host, chỉ nạp subset latin + vietnamese) */
+@import '@fontsource/be-vietnam-pro/latin-400.css';
+@import '@fontsource/be-vietnam-pro/latin-500.css';
+@import '@fontsource/be-vietnam-pro/latin-600.css';
+@import '@fontsource/be-vietnam-pro/latin-700.css';
+@import '@fontsource/be-vietnam-pro/vietnamese-400.css';
+@import '@fontsource/be-vietnam-pro/vietnamese-500.css';
+@import '@fontsource/be-vietnam-pro/vietnamese-600.css';
+@import '@fontsource/be-vietnam-pro/vietnamese-700.css';
+
+/* Quét class Tailwind trong cả module */
+@source '../js/**/*.vue';
+@source '../../app/Modules/**/*.vue';
+@source '../views/**/*.blade.php';
+
+@theme {
+    --font-sans: 'Be Vietnam Pro', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+body.font-sans {
+    font-family: 'Be Vietnam Pro', ui-sans-serif, system-ui, sans-serif;
+}
