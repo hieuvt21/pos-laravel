@@ -1,5 +1,5 @@
 php artisan migrate : thay đổi database
-php artisan pos:sync : thay đổi quyền.
+php artisan pos:sync : thay đổi quyền
 php artisan optimize:clear : xoá cache
 
 
