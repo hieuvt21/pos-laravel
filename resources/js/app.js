@@ -2,6 +2,9 @@ import '../css/ui.css';
 import 'primeicons/primeicons.css';
 import './composables/useUiSettings'; // áp dụng ảnh nền đã lưu ngay khi mở app
 import { getBrandName, setBrandName } from './composables/useBranding';
+import { installAutoCapitalize } from './utils/autoCapitalize';
+
+installAutoCapitalize(); // quy tắc chung: tự viết hoa chữ cái đầu ở mọi ô nhập chữ
 
 import { createInertiaApp } from '@inertiajs/vue3';
 import { createApp, h } from 'vue';

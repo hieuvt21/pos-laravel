@@ -5,6 +5,7 @@ use App\Modules\Core\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Modules\Core\Http\Controllers\Auth\PasswordController;
 use App\Modules\Core\Http\Controllers\DashboardController;
 use App\Modules\Core\Http\Controllers\HomeController;
+use App\Modules\Core\Http\Controllers\MemberTierController;
 use App\Modules\Core\Http\Controllers\ProfileController;
 use App\Modules\Core\Http\Controllers\RoleController;
 use App\Modules\Core\Http\Controllers\StoreSettingsController;
@@ -43,6 +44,12 @@ Route::middleware('auth')->group(function () {
         Route::put('/info', [StoreSettingsController::class, 'updateInfo'])->name('info');
         Route::put('/finance', [StoreSettingsController::class, 'updateFinance'])->name('finance');
         Route::put('/numbering', [StoreSettingsController::class, 'updateNumbering'])->name('numbering');
+    });
+
+    // Hạng thành viên
+    Route::middleware('can:settings.manage')->prefix('member-tiers')->name('member-tiers.')->group(function () {
+        Route::get('/', [MemberTierController::class, 'edit'])->name('edit');
+        Route::put('/', [MemberTierController::class, 'update'])->name('update');
     });
 
     // Người dùng (route cố định /users/check đứng trước route có {user})

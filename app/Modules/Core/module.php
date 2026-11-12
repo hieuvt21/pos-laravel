@@ -43,6 +43,7 @@ return [
             'items' => [
                 ['label' => 'Giao diện', 'icon' => 'pi pi-palette', 'route' => 'appearance.edit', 'match' => 'appearance.*', 'order' => 10],
                 ['label' => 'Cửa hàng', 'icon' => 'pi pi-building', 'route' => 'store.edit', 'match' => 'store.*', 'can' => 'settings.manage', 'order' => 20],
+                ['label' => 'Hạng thành viên', 'icon' => 'pi pi-star', 'route' => 'member-tiers.edit', 'match' => 'member-tiers.*', 'can' => 'settings.manage', 'order' => 25],
                 ['label' => 'Người dùng', 'icon' => 'pi pi-users', 'route' => 'users.index', 'match' => 'users.*', 'can' => 'users.view', 'order' => 30],
                 ['label' => 'Vai trò & quyền', 'icon' => 'pi pi-shield', 'route' => 'roles.index', 'match' => 'roles.*', 'can' => 'roles.manage', 'order' => 40],
             ],

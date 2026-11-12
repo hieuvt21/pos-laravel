@@ -242,13 +242,13 @@ function remove(u) {
                 <small v-if="form.errors.avatar_file" class="field-error" style="display: block; margin: -0.5rem 0 1rem">{{ form.errors.avatar_file }}</small>
 
                 <div class="field">
-                    <label for="u-name">Họ tên</label>
-                    <InputText id="u-name" v-model="form.name" autocomplete="off" fluid :invalid="!!form.errors.name" />
+                    <label for="u-name">Họ tên <span class="app-req" aria-hidden="true">*</span></label>
+                    <InputText id="u-name" data-cap="words" v-model="form.name" autocomplete="off" fluid :invalid="!!form.errors.name" />
                     <small v-if="form.errors.name" class="field-error">{{ form.errors.name }}</small>
                 </div>
 
                 <div class="field">
-                    <label for="u-username">Tên đăng nhập</label>
+                    <label for="u-username">Tên đăng nhập <span class="app-req" aria-hidden="true">*</span></label>
                     <InputText
                         id="u-username"
                         :modelValue="form.username"
@@ -268,7 +268,7 @@ function remove(u) {
                 </div>
 
                 <div class="field">
-                    <label for="u-phone">Số điện thoại <span class="field-hint">(không bắt buộc)</span></label>
+                    <label for="u-phone">Số điện thoại</label>
                     <PhoneInput
                         id="u-phone"
                         v-model="form.phone"
@@ -283,7 +283,7 @@ function remove(u) {
                 </div>
 
                 <div class="field">
-                    <label for="u-email">Email <span class="field-hint">(không bắt buộc)</span></label>
+                    <label for="u-email">Email</label>
                     <InputText
                         id="u-email"
                         v-model="form.email"
@@ -299,7 +299,7 @@ function remove(u) {
                 </div>
 
                 <div class="field">
-                    <label for="u-password">{{ editing ? 'Mật khẩu mới' : 'Mật khẩu' }}</label>
+                    <label for="u-password">{{ editing ? 'Mật khẩu mới' : 'Mật khẩu' }}<span v-if="!editing" class="app-req" aria-hidden="true">*</span></label>
                     <Password
                         v-model="form.password"
                         inputId="u-password"
@@ -311,12 +311,12 @@ function remove(u) {
                     />
                     <small v-if="form.errors.password" class="field-error">{{ form.errors.password }}</small>
                     <small v-else class="field-hint">
-                        {{ editing ? 'Bỏ trống nếu không đổi mật khẩu.' : 'Tối thiểu 8 ký tự.' }}
+                        {{ editing ? 'Bỏ trống nếu không đổi mật khẩu.' : 'Tối thiểu 6 ký tự.' }}
                     </small>
                 </div>
 
                 <div class="field">
-                    <label for="u-role">Vai trò</label>
+                    <label for="u-role">Vai trò <span class="app-req" aria-hidden="true">*</span></label>
                     <Select
                         v-model="form.role"
                         inputId="u-role"

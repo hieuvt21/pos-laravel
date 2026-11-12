@@ -76,7 +76,7 @@ trait ManagesIdentity
             'phone.digits' => 'Số điện thoại gồm đúng 10 số.',
             'phone.unique' => 'Số điện thoại này đã được sử dụng.',
             'password.required' => 'Vui lòng nhập mật khẩu.',
-            'password.min' => 'Mật khẩu tối thiểu 8 ký tự.',
+            'password.min' => 'Mật khẩu tối thiểu 6 ký tự.',
             'role.required' => 'Vui lòng chọn vai trò.',
             'avatar_file.image' => 'Ảnh đại diện phải là JPG, PNG hoặc WebP.',
             'avatar_file.mimes' => 'Ảnh đại diện phải là JPG, PNG hoặc WebP.',

@@ -67,11 +67,18 @@ Dùng chung (không thuộc module nào): `resources/js/{Layouts,Components,comp
 - Trang theo mẫu `Users/Index.vue`: `<Head>` + `<AppLayout>`, panel `app-panel app-fill`, `DataTable`, thêm/sửa trong `AppDialog`, `useForm`, xoá bằng `useConfirm`.
 - Component dùng chung: `AppDialog` (dùng thay `Dialog`), `FieldStatus`, `PhoneInput`, `ImageInput`, `AvatarPicker`, `UserAvatar`, `BrandMark`. Toast và ConfirmDialog đã có sẵn trong layout.
 - Cờ giao diện cá nhân (thanh bên ghim/tự thu, ảnh nền) lưu localStorage (`pos.ui`).
+- **Trường bắt buộc:** dấu sao đỏ ngay sau nhãn: `<span class="app-req" aria-hidden="true">*</span>`. Trường tùy chọn thì KHÔNG ghi "không bắt buộc".
+- **Tự viết hoa chữ cái đầu** ở mọi ô nhập chữ (`utils/autoCapitalize.js`, cài ở `app.js`). Tên người (khách, người dùng, chủ cửa hàng) thêm `data-cap="words"` để viết hoa đầu mỗi từ. Ô mã/mã vạch/tên đăng nhập/email/số/mật khẩu/tìm kiếm tự được bỏ qua; ô khác muốn tắt thì thêm `data-nocap`. Ô mới phải đặt `id` không chứa `code|barcode|username|login|email|phone|tax|hex` nếu là ô mã.
+- **Menu:** mỗi module một nhóm riêng trong `module.php` (Khách hàng, Sản phẩm...), không gộp chung "Bán hàng".
+- **Cảm ứng:** không để thông tin chỉ nằm trong tooltip (hover). Thông tin đó phải có ở khung chi tiết, và thêm nút ⓘ chạm để mở `Popover`.
+- **Responsive:** mọi trang phải dùng tốt trên máy tính bảng và điện thoại: lưới `minmax(min(100%, Xrem), 1fr)`, bảng cuộn ngang, nút/ô nhập cao tối thiểu 44px, chữ ô nhập >= 16px, dialog ~96vw. Breakpoint dùng: 1023 / 767 / 480px (cuối `ui.css`).
+- **Giao diện vs Cửa hàng:** trang Giao diện = tên hiển thị (tối đa 12 ký tự, hiện trên thanh bên/tab), logo, màu chủ đề (17 màu hoặc tự nhập mã hex). Trang Cửa hàng = tên đầy đủ, logo, địa chỉ... in trên hóa đơn (độc lập hoàn toàn, `store_info.name` + setting `store_logo`).
+- **Hạng thành viên:** menu Hệ thống > Hạng thành viên; `CustomerTiers::for($tongChiTieu)` / `discountFor()`; component `TierBadge`. Setting key `customer_tiers`.
 
 ## 5. Xác thực & phân quyền
 
-- **Nhân viên:** guard `web`, bảng `users`. Đăng nhập bằng tên đăng nhập / SĐT / email. Không đăng ký công khai; admin tạo tài khoản ở trang Người dùng.
-- **Đổi mật khẩu lần đầu:** `users.must_change_password` bật khi tạo mới hoặc admin đặt lại mật khẩu; middleware chuyển về `/password/change` tới khi đổi xong. Tài khoản seed `admin` / `admin` cũng bị bắt đổi.
+- **Nhân viên:** guard `web`, bảng `users`. Đăng nhập bằng tên đăng nhập / SĐT / email. Mật khẩu tối thiểu **6 ký tự** (không bắt buộc phức tạp). Không đăng ký công khai; admin tạo tài khoản ở trang Người dùng.
+- **Đổi mật khẩu lần đầu:** `users.must_change_password` bật khi tạo mới hoặc admin đặt lại mật khẩu; middleware chuyển về `/password/change` tới khi đổi xong; màn này **không hỏi mật khẩu cũ** (nhưng mật khẩu mới phải khác mật khẩu được cấp). Đổi mật khẩu tự nguyện ở trang Hồ sơ vẫn hỏi mật khẩu hiện tại. Tài khoản seed `admin` / `admin` cũng bị bắt đổi.
 - **Quên mật khẩu:** không tự phục vụ; admin đặt lại ở trang Người dùng. Admin tự quên (không có SSH): dán mã băm vào bảng `users` bằng phpMyAdmin hoặc dùng helper tạm có token.
 - **Vai trò mặc định** (`module.php` của Core): `admin` (toàn quyền qua `Gate::before`), `manager`, `cashier`, `warehouse`. `pos:sync` chỉ gán quyền mặc định cho vai trò mới tạo hoặc quyền mới thêm, không ghi đè phần đã chỉnh trên giao diện.
 - **Cổng khách hàng (làm sau, module `Portal`, phụ thuộc `Customers`):** guard riêng `customer` trên bảng `customers` (cột mới `password`, `can_login`, `must_change_password`, `last_login_at`); đăng nhập ở `/portal/login` bằng SĐT + mật khẩu; admin tích "cho phép đăng nhập" ở trang Khách hàng -> đặt mật khẩu mặc định (cài đặt cửa hàng, ví dụ 123456) và bắt đổi ở lần đầu; quên mật khẩu = admin đặt lại. Quyền nhân viên không áp dụng cho khách. Giới hạn số lần đăng nhập sai, mọi truy vấn gắn với đúng khách đang đăng nhập.
@@ -108,8 +115,8 @@ Purchasing -> Inventory | Sales -> Catalog, Inventory, Customers | Reports chỉ
 - [x] 0. Khởi tạo dự án (Laravel, Inertia 3, PrimeVue 4, Tailwind 4, font, Pest, Pint, Larastan)
 - [x] 1. **Core** (code đã viết, chờ bạn chạy thử): layout kính mờ, đăng nhập, đổi mật khẩu lần đầu, hồ sơ, người dùng, vai trò & quyền, cửa hàng (thông tin, tiền tệ & thuế, đánh số chứng từ), giao diện, khung module, `pos:sync`
 - [ ] 0b. Thử deploy lên cPanel bằng workflow + `deploy-helper.php` (xác nhận PHP 8.4, zip, migrate, pos:sync)
-- [ ] 2. Catalog (danh mục, đơn vị tính, bảng giá, sản phẩm) = module mẫu
-- [ ] 3. Customers (khách hàng, hạng khách hàng, nhập/xuất Excel chỉ admin)
+- [x] 2. Catalog (danh mục, đơn vị tính, bảng giá, sản phẩm) = module mẫu - code xong, chờ chạy thử
+- [x] 3. Customers (khách hàng, giới tính, nhập/xuất Excel theo quyền) - code xong, chờ chạy thử
 - [ ] 4. Inventory -> 5. Purchasing -> 6. Sales/POS (+ mẫu hoá đơn, phương thức thanh toán, chính sách giảm giá/hoàn trả) -> 7. Ca làm việc -> 8. Portal (cổng khách) -> 9. Báo cáo -> 10. Sao lưu, nhật ký hoạt động, tối ưu
 
 ## 9. Quyết định đã chốt
@@ -130,8 +137,12 @@ Purchasing -> Inventory | Sales -> Catalog, Inventory, Customers | Reports chỉ
 
 ## 10. Việc đang làm / bước tiếp theo
 
+- Vừa xong (chờ chạy thử): module Catalog (sản phẩm, danh mục, đơn vị, bảng giá, giá theo số lượng, `CatalogService`). Xem `docs/modules/catalog.md`. Chưa có nhập/xuất Excel sản phẩm.
+
+- Vừa xong (chờ chạy thử): module Customers (danh sách, thêm/sửa/xóa mềm, chọn giới tính -> ảnh nam/nữ, nhập/xuất Excel, `CustomerService`). Xem `docs/modules/customers.md`.
+
 - Đang làm: chạy thử Core trên Laragon (đăng nhập `admin`/`admin` -> đổi mật khẩu -> các trang Core).
-- Tiếp theo: 0b (deploy thử), rồi Catalog, Customers.
+- Tiếp theo: chạy thử Core + Customers + Catalog, 0b (deploy thử), rồi Inventory.
 - Còn mở: chưa có nhật ký hoạt động (activitylog); `useUniqueCheck` còn nhắc route `customers.check`/`products.check` (sẽ có khi làm module tương ứng); bước tải FTP trong workflow đang dùng `--insecure` (bỏ kiểm tra chứng chỉ) nên đổi nếu host có chứng chỉ hợp lệ.
 
 ## 11. Làm việc với AI

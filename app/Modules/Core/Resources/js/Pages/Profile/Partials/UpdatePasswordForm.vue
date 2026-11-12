@@ -41,7 +41,7 @@ function updatePassword() {
         </p>
 
         <div class="field">
-            <label for="pw-current">Mật khẩu hiện tại</label>
+            <label for="pw-current">Mật khẩu hiện tại <span class="app-req" aria-hidden="true">*</span></label>
             <Password
                 ref="currentRef"
                 v-model="form.current_password"
@@ -56,7 +56,7 @@ function updatePassword() {
         </div>
 
         <div class="field">
-            <label for="pw-new">Mật khẩu mới</label>
+            <label for="pw-new">Mật khẩu mới <span class="app-req" aria-hidden="true">*</span></label>
             <Password
                 ref="newRef"
                 v-model="form.password"
@@ -68,11 +68,11 @@ function updatePassword() {
                 :invalid="!!form.errors.password"
             />
             <small v-if="form.errors.password" class="field-error">{{ form.errors.password }}</small>
-            <small v-else class="field-hint">Tối thiểu 8 ký tự.</small>
+            <small v-else class="field-hint">Tối thiểu 6 ký tự.</small>
         </div>
 
         <div class="field">
-            <label for="pw-confirm">Nhập lại mật khẩu mới</label>
+            <label for="pw-confirm">Nhập lại mật khẩu mới <span class="app-req" aria-hidden="true">*</span></label>
             <Password
                 v-model="form.password_confirmation"
                 inputId="pw-confirm"

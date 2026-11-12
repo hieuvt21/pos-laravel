@@ -15,6 +15,7 @@ const preset = defineModel('preset', { default: null });
 const remove = defineModel('remove', { default: false });
 
 const input = ref();
+const open = ref(false); // mặc định ẩn bộ ảnh có sẵn cho gọn
 const blobUrl = ref(null);
 const error = ref('');
 
@@ -86,8 +87,13 @@ onBeforeUnmount(() => setBlob(null));
             <input ref="input" type="file" accept="image/png,image/jpeg,image/webp" hidden @change="onFile" />
         </div>
 
-        <p class="field-hint" style="margin: 0">JPG, PNG hoặc WebP, tối đa 2 MB. Hoặc chọn ảnh có sẵn:</p>
-        <div class="avatar-grid" role="group" aria-label="Ảnh đại diện có sẵn">
+        <button type="button" class="avatar-toggle" :aria-expanded="open" aria-controls="avatar-presets" @click="open = !open">
+            <i :class="['pi', open ? 'pi-chevron-up' : 'pi-chevron-down']" aria-hidden="true" />
+            Chọn ảnh có sẵn
+        </button>
+        <template v-if="open">
+        <p class="field-hint" style="margin: 0.4rem 0 0">JPG, PNG hoặc WebP, tối đa 2 MB.</p>
+        <div id="avatar-presets" class="avatar-grid" role="group" aria-label="Ảnh đại diện có sẵn">
             <button
                 v-for="p in presets"
                 :key="p.key"
@@ -101,6 +107,7 @@ onBeforeUnmount(() => setBlob(null));
                 <img :src="p.url" alt="" />
             </button>
         </div>
+        </template>
         <small v-if="error" class="field-error" role="alert">{{ error }}</small>
     </div>
 </template>

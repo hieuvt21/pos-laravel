@@ -7,8 +7,14 @@ use Illuminate\Support\Facades\Cache;
 
 class Setting extends Model
 {
-    /** Màu chủ đề cho phép (tên bảng màu của PrimeVue Aura). */
-    public const THEMES = ['teal', 'emerald', 'sky', 'blue', 'indigo', 'violet', 'rose', 'orange'];
+    /** Màu chủ đề có sẵn (tên bảng màu của PrimeVue Aura). Ngoài ra còn 'custom' = màu tự chọn theo mã màu. */
+    public const THEMES = [
+        'teal', 'emerald', 'green', 'lime', 'cyan', 'sky', 'blue', 'indigo', 'violet',
+        'purple', 'fuchsia', 'pink', 'rose', 'red', 'orange', 'amber', 'slate',
+    ];
+
+    /** Độ dài tối đa của tên hiển thị trên thanh bên (dài hơn sẽ đẩy mất nút ghim). */
+    public const SHOP_NAME_MAX = 12;
 
     /** Biểu tượng logo có sẵn. 'letter' = chữ cái đầu của tên cửa hàng. */
     public const LOGO_ICONS = [
@@ -58,13 +64,19 @@ class Setting extends Model
     /** Thông tin liên hệ của cửa hàng (in lên hóa đơn). */
     public static function storeInfo(): array
     {
-        return static::json('store_info', [
+        $info = static::json('store_info', [
+            'name' => '',
             'address' => '',
             'phone' => '',
             'email' => '',
             'tax_code' => '',
             'owner' => '',
         ]);
+
+        $logo = static::read('store_logo');
+        $info['logo_url'] = $logo ? '/'.ltrim($logo, '/') : null;
+
+        return $info;
     }
 
     /** Tiền tệ, làm tròn, thuế. Mặc định cho cửa hàng tạp hóa ở Việt Nam. */
@@ -88,11 +100,13 @@ class Setting extends Model
     public static function branding(): array
     {
         $theme = static::read('theme', 'teal');
+        $custom = static::read('theme_custom');
         $image = static::read('logo_image');
 
         return [
             'name' => static::read('shop_name', 'Pos'),
-            'theme' => in_array($theme, self::THEMES, true) ? $theme : 'teal',
+            'theme' => in_array($theme, [...self::THEMES, 'custom'], true) ? $theme : 'teal',
+            'theme_custom' => is_string($custom) && preg_match('/^#[0-9a-f]{6}$/', $custom) ? $custom : '#0f766e',
             'logo' => [
                 'type' => static::read('logo_type', 'icon'),
                 'icon' => static::read('logo_icon', 'letter'),

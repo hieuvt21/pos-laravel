@@ -4,6 +4,7 @@ const NORMALIZE = {
     username: (v) => String(v ?? '').trim().toLowerCase(),
     email: (v) => String(v ?? '').trim().toLowerCase(),
     phone: (v) => String(v ?? '').replace(/\D/g, ''),
+    name: (v) => String(v ?? '').trim(),
     code: (v) => String(v ?? '').trim(),
     barcode: (v) => String(v ?? '').trim(),
 };
@@ -18,6 +19,7 @@ const FORMAT = {
     },
     email: (v) => (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? null : 'Email chưa đúng định dạng.'),
     phone: (v) => (/^\d{10}$/.test(v) ? null : 'Số điện thoại gồm đúng 10 số.'),
+    name: (v) => (v.length > 255 ? 'Tối đa 255 ký tự.' : null),
     code: (v) => (/^[A-Za-z0-9._-]{1,50}$/.test(v) ? null : 'Chỉ gồm chữ, số, dấu chấm, gạch dưới hoặc gạch ngang (tối đa 50 ký tự).'),
     barcode: (v) => (/^[A-Za-z0-9._-]{1,50}$/.test(v) ? null : 'Chỉ gồm chữ, số, dấu chấm, gạch dưới hoặc gạch ngang (tối đa 50 ký tự).'),
 };
@@ -27,7 +29,7 @@ const DEBOUNCE_MS = 450;
 /**
  * Kiểm tra trùng khi đang nhập.
  *
- * @param {'username'|'email'|'phone'|'code'|'barcode'} field
+ * @param {'username'|'email'|'phone'|'code'|'barcode'|'name'} field
  * @param {() => string} getValue      giá trị đang nhập
  * @param {{ ignoreId?: () => number|null, original?: () => string|null, url?: () => string }} options
  *        ignoreId: bỏ qua bản ghi này (khi sửa); original: giá trị cũ, không cần kiểm tra lại;

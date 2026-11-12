@@ -15,6 +15,7 @@ import TabPanels from 'primevue/tabpanels';
 import Tabs from 'primevue/tabs';
 import ToggleSwitch from 'primevue/toggleswitch';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import ImageInput from '@/Components/ImageInput.vue';
 import { DEFAULT_FINANCE, formatMoney, roundMoney } from '@/utils/money';
 import { DATE_FORMATS, SEPARATORS, composeNumber } from '@/utils/numbering';
 
@@ -32,8 +33,12 @@ const tab = ref('info');
 const saveOptions = { preserveScroll: true, preserveState: true };
 
 /* ============ Tab 1: Cửa hàng ============ */
-const infoForm = useForm({ ...props.store });
-const saveInfo = () => infoForm.put(route('store.info'), saveOptions);
+const { logo_url: storedLogo, ...storeFields } = props.store;
+const infoForm = useForm({ ...storeFields, store_logo_file: null, store_logo_remove: false });
+const saveInfo = () =>
+    infoForm
+        .transform((d) => ({ ...d, store_logo_remove: d.store_logo_remove ? 1 : 0, _method: 'put' }))
+        .post(route('store.info'), { ...saveOptions, forceFormData: true, onSuccess: () => (infoForm.store_logo_file = null) });
 
 /* ============ Tab 2: Tiền tệ & thuế ============ */
 const saved = { ...DEFAULT_FINANCE, ...(page.props.finance ?? {}) };
@@ -155,13 +160,30 @@ const saveNumbering = () => numberingForm.put(route('store.numbering'), saveOpti
                     <TabPanel value="info">
                         <form class="st-form" novalidate @submit.prevent="saveInfo">
                             <p class="ap-note">
-                                Tên và logo cửa hàng chỉnh ở trang
-                                <Link :href="route('appearance.edit')">Giao diện</Link>. Thông tin dưới đây dùng để in lên hóa đơn.
+                                Thông tin này dùng để in lên hóa đơn, độc lập với tên và logo hiển thị ở trang
+                                <Link :href="route('appearance.edit')">Giao diện</Link>.
                             </p>
+
+                            <div class="st-brandrow">
+                                <ImageInput
+                                    v-model:file="infoForm.store_logo_file"
+                                    v-model:remove="infoForm.store_logo_remove"
+                                    :url="storedLogo"
+                                    label="logo cửa hàng"
+                                    size="4.5rem"
+                                    :error="infoForm.errors.store_logo_file"
+                                />
+                                <div class="field">
+                                    <label for="st-name">Tên cửa hàng <span class="app-req" aria-hidden="true">*</span></label>
+                                    <InputText id="st-name" v-model="infoForm.name" maxlength="100" autocomplete="off" autofocus fluid :invalid="!!infoForm.errors.name" />
+                                    <small v-if="infoForm.errors.name" class="field-error">{{ infoForm.errors.name }}</small>
+                                    <small v-else class="field-hint">Tên đầy đủ in trên hóa đơn.</small>
+                                </div>
+                            </div>
 
                             <div class="field">
                                 <label for="st-address">Địa chỉ</label>
-                                <InputText id="st-address" v-model="infoForm.address" autocomplete="off" autofocus fluid :invalid="!!infoForm.errors.address" />
+                                <InputText id="st-address" v-model="infoForm.address" autocomplete="off" fluid :invalid="!!infoForm.errors.address" />
                                 <small v-if="infoForm.errors.address" class="field-error">{{ infoForm.errors.address }}</small>
                             </div>
 
@@ -181,7 +203,7 @@ const saveNumbering = () => numberingForm.put(route('store.numbering'), saveOpti
                             <div class="st-row">
                                 <div class="field">
                                     <label for="st-owner">Chủ cửa hàng / người đại diện</label>
-                                    <InputText id="st-owner" v-model="infoForm.owner" autocomplete="off" fluid :invalid="!!infoForm.errors.owner" />
+                                    <InputText id="st-owner" data-cap="words" v-model="infoForm.owner" autocomplete="off" fluid :invalid="!!infoForm.errors.owner" />
                                     <small v-if="infoForm.errors.owner" class="field-error">{{ infoForm.errors.owner }}</small>
                                 </div>
                                 <div class="field">

@@ -33,6 +33,7 @@ resources/css/{app.css,ui.css}
 - `Setting::read($key)`, `Setting::finance()`, `Setting::storeInfo()`, `Setting::branding()`.
 - `DocumentNumber::next('invoice'|'sale_return'|'purchase'|'stock_check'|'cash_in'|'cash_out'|'shift'|'product'|'customer'|'supplier')`.
 - `Money::round($n)`, `Money::format($n)`.
+- `CustomerTiers::for($spent)` (hạng + hạng kế tiếp), `discountFor($spent)`, `config()`, `enabled()`; setting `customer_tiers`.
 - `ModuleRegistry` (đọc module.php): `permissionNames()`, `permissionGroups()`, `defaultRoles()`, `navigation($user)`.
 - Trait `ManagesIdentity` (chuẩn hóa username/email/phone, ảnh đại diện) cho controller liên quan người dùng.
 
@@ -42,11 +43,12 @@ resources/css/{app.css,ui.css}
 `auth.user {id,name,username,email,avatar_url,roles,permissions}`, `navigation` (menu đã lọc quyền), `branding`, `finance`, `flash {success,error}`.
 
 ## Quyền (khai báo trong module.php)
-`users.view|create|update|delete`, `roles.manage`, `settings.manage`. Vai trò mặc định: `admin` (toàn quyền), `manager`, `cashier`, `warehouse`.
+`users.view|create|update|delete`, `roles.manage`, `settings.manage` (gồm Giao diện chung, Cửa hàng, Hạng thành viên). Vai trò mặc định: `admin` (toàn quyền), `manager`, `cashier`, `warehouse`.
 
 ## Đăng nhập & đổi mật khẩu lần đầu
 - Đăng nhập bằng tên đăng nhập, số điện thoại hoặc email; chặn dò mật khẩu 5 lần/khóa.
 - `users.must_change_password = true` khi tài khoản mới tạo, hoặc quản trị viên đặt lại mật khẩu người khác. Middleware `EnsurePasswordIsChanged` chuyển mọi trang về `password.force` cho tới khi đổi xong.
+- Mật khẩu tối thiểu 6 ký tự. Màn đổi lần đầu không hỏi mật khẩu cũ.
 - Không có đăng ký công khai, không có quên mật khẩu tự phục vụ (admin đặt lại ở trang Người dùng).
 
 ## Lịch sử

@@ -8,6 +8,7 @@ use App\Modules\Core\Models\Setting;
 use App\Modules\Core\Support\DocumentNumber;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -31,23 +32,50 @@ class StoreSettingsController extends Controller
     public function updateInfo(Request $request): RedirectResponse
     {
         $data = $request->validate([
+            'name' => ['required', 'string', 'max:100'],
+            'store_logo_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:1024'],
+            'store_logo_remove' => ['nullable', 'boolean'],
             'address' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20', 'regex:/^[0-9 .()+\-]+$/'],
             'email' => ['nullable', 'email', 'max:255'],
             'tax_code' => ['nullable', 'regex:/^\d{10}(-?\d{3})?$/'],
             'owner' => ['nullable', 'string', 'max:100'],
         ], [
+            'name.required' => 'Nhập tên cửa hàng.',
+            'name.max' => 'Tên cửa hàng tối đa 100 ký tự.',
+            'store_logo_file.image' => 'Logo phải là ảnh JPG, PNG hoặc WebP.',
+            'store_logo_file.max' => 'Ảnh logo tối đa 1 MB.',
             'phone.regex' => 'Số điện thoại chỉ gồm chữ số và các ký tự + - . ( ).',
             'email.email' => 'Email chưa đúng định dạng.',
             'tax_code.regex' => 'Mã số thuế gồm 10 số, hoặc 13 số (có thể có dấu gạch ngang trước 3 số cuối).',
         ]);
 
+        $keys = ['name', 'address', 'phone', 'email', 'tax_code', 'owner'];
         Setting::putJson('store_info', array_map(
-            fn ($v) => trim((string) $v),
-            $data + Setting::storeInfo(),
+            fn ($k) => trim((string) ($data[$k] ?? '')),
+            array_combine($keys, $keys),
         ));
 
+        $old = Setting::read('store_logo');
+        if ($request->hasFile('store_logo_file')) {
+            $file = $request->file('store_logo_file');
+            $name = 'store-'.Str::random(12).'.'.$file->extension();
+            $file->move(public_path('uploads/store'), $name);
+            $this->deleteLogo($old);
+            Setting::write(['store_logo' => 'uploads/store/'.$name]);
+        } elseif ($request->boolean('store_logo_remove')) {
+            $this->deleteLogo($old);
+            Setting::write(['store_logo' => '']);
+        }
+
         return back()->with('success', 'Đã lưu thông tin cửa hàng.');
+    }
+
+    private function deleteLogo(?string $path): void
+    {
+        if ($path && str_starts_with($path, 'uploads/store/')) {
+            @unlink(public_path($path));
+        }
     }
 
     /** Tab "Tiền tệ & thuế". */

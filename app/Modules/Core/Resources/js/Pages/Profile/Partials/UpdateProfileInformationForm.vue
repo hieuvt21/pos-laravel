@@ -62,13 +62,13 @@ function submit() {
         <small v-if="form.errors.avatar_file" class="field-error" style="display: block; margin: -0.5rem 0 1rem">{{ form.errors.avatar_file }}</small>
 
         <div class="field">
-            <label for="pf-name">Họ tên</label>
-            <InputText id="pf-name" v-model="form.name" autocomplete="name" autofocus fluid :invalid="!!form.errors.name" />
+            <label for="pf-name">Họ tên <span class="app-req" aria-hidden="true">*</span></label>
+            <InputText id="pf-name" data-cap="words" v-model="form.name" autocomplete="name" autofocus fluid :invalid="!!form.errors.name" />
             <small v-if="form.errors.name" class="field-error">{{ form.errors.name }}</small>
         </div>
 
         <div class="field">
-            <label for="pf-username">Tên đăng nhập</label>
+            <label for="pf-username">Tên đăng nhập <span class="app-req" aria-hidden="true">*</span></label>
             <div id="pf-username" class="pf-readonly">
                 <i class="pi pi-lock" aria-hidden="true" />
                 <span>{{ profile.username }}</span>
@@ -77,7 +77,7 @@ function submit() {
         </div>
 
         <div class="field">
-            <label for="pf-phone">Số điện thoại <span class="field-hint">(không bắt buộc)</span></label>
+            <label for="pf-phone">Số điện thoại</label>
             <PhoneInput
                 id="pf-phone"
                 v-model="form.phone"
@@ -92,7 +92,7 @@ function submit() {
         </div>
 
         <div class="field">
-            <label for="pf-email">Email <span class="field-hint">(không bắt buộc)</span></label>
+            <label for="pf-email">Email</label>
             <InputText
                 id="pf-email"
                 v-model="form.email"

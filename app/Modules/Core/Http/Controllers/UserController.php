@@ -56,7 +56,7 @@ class UserController extends Controller
             'username' => $this->usernameRules(),
             'phone' => $this->phoneRules(),
             'email' => $this->emailRules(),
-            'password' => ['required', 'string', 'min:8'],
+            'password' => ['required', 'string', 'min:6'],
             'role' => ['required', Rule::exists('roles', 'name')],
             ...$this->avatarRules(),
         ], $this->identityMessages());
@@ -87,7 +87,7 @@ class UserController extends Controller
             'username' => $this->usernameRules($user->id),
             'phone' => $this->phoneRules($user->id),
             'email' => $this->emailRules($user->id),
-            'password' => ['nullable', 'string', 'min:8'],
+            'password' => ['nullable', 'string', 'min:6'],
             'role' => ['required', Rule::exists('roles', 'name')],
             ...$this->avatarRules(),
         ], $this->identityMessages());

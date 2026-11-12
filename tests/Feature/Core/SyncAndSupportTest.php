@@ -45,3 +45,32 @@ it('menu chỉ hiện mục đủ quyền', function () {
         ->and($labels($cashier))->not->toContain('Người dùng')
         ->and($labels($cashier))->toContain('Bảng điều khiển');
 });
+
+it('hạng thành viên: tính hạng và % giảm theo tổng chi tiêu', function () {
+    $t = \App\Modules\Core\Support\CustomerTiers::for(2500000);
+
+    expect($t['name'])->toBe('Bạc')
+        ->and($t['discount'])->toBe(1.0)
+        ->and($t['next']['name'])->toBe('Vàng')
+        ->and(\App\Modules\Core\Support\CustomerTiers::discountFor(0))->toBe(0.0);
+});
+
+it('tên hiển thị tối đa 12 ký tự và màu tự chọn phải là mã hex', function () {
+    $this->artisan('pos:sync');
+    $admin = User::where('username', 'admin')->first();
+    $admin->forceFill(['must_change_password' => false])->save();
+    $ok = ['shop_name' => 'Pos', 'theme' => 'custom', 'theme_custom' => '#112233', 'logo_type' => 'icon', 'logo_icon' => \App\Modules\Core\Models\Setting::LOGO_ICONS[0]];
+
+    $this->actingAs($admin)->post(route('appearance.branding'), array_merge($ok, ['shop_name' => 'Tên quá dài vượt mức']))->assertSessionHasErrors('shop_name');
+    $this->actingAs($admin)->post(route('appearance.branding'), array_merge($ok, ['theme_custom' => 'xanh']))->assertSessionHasErrors('theme_custom');
+    $this->actingAs($admin)->post(route('appearance.branding'), $ok)->assertSessionDoesntHaveErrors();
+});
+
+it('tắt áp dụng giảm giá: vẫn có hạng nhưng giảm 0%', function () {
+    \App\Modules\Core\Models\Setting::putJson('customer_tiers', ['enabled' => false, 'tiers' => \App\Modules\Core\Support\CustomerTiers::defaults()['tiers']]);
+
+    $t = \App\Modules\Core\Support\CustomerTiers::for(6000000);
+    expect($t['name'])->toBe('Vàng')
+        ->and($t['discount'])->toBe(0.0)
+        ->and(\App\Modules\Core\Support\CustomerTiers::discountFor(6000000))->toBe(0.0);
+});

@@ -6,24 +6,34 @@ import InputText from 'primevue/inputtext';
 import SelectButton from 'primevue/selectbutton';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BrandMark from '@/Components/BrandMark.vue';
-import { applyTheme, useBranding } from '@/composables/useBranding';
+import { applyTheme, isTooLight, useBranding } from '@/composables/useBranding';
 import { usePermission } from '@/composables/usePermission';
 import { useUiSettings } from '@/composables/useUiSettings';
 
 defineProps({
     themes: { type: Array, default: () => [] },
     icons: { type: Array, default: () => [] },
+    shopNameMax: { type: Number, default: 12 },
 });
 
 const THEME_LABELS = {
     teal: 'Xanh ngọc',
     emerald: 'Lục bảo',
+    green: 'Xanh lá',
+    lime: 'Xanh chanh',
+    cyan: 'Lơ',
     sky: 'Xanh da trời',
     blue: 'Xanh dương',
     indigo: 'Chàm',
-    violet: 'Tím',
-    rose: 'Hồng',
+    violet: 'Tím than',
+    purple: 'Tím',
+    fuchsia: 'Hồng tím',
+    pink: 'Hồng',
+    rose: 'Hồng đào',
+    red: 'Đỏ',
     orange: 'Cam',
+    amber: 'Hổ phách',
+    slate: 'Xám xanh',
 };
 
 const { can } = usePermission();
@@ -35,6 +45,7 @@ const canEdit = computed(() => can('settings.manage'));
 const form = useForm({
     shop_name: branding.value.name,
     theme: branding.value.theme,
+    theme_custom: branding.value.theme_custom ?? '#0f766e',
     logo_type: branding.value.logo.type,
     logo_icon: branding.value.logo.icon,
     logo_file: null,
@@ -85,9 +96,21 @@ function chooseIcon(key) {
     form.logo_type = 'icon';
 }
 
+const HEX = /^#[0-9a-fA-F]{6}$/;
+const customValid = computed(() => HEX.test(form.theme_custom));
+const customTooLight = computed(() => customValid.value && isTooLight(form.theme_custom));
+
 function chooseTheme(key) {
     form.theme = key; // đổi màu xem thử ngay, lưu mới có hiệu lực cho mọi người
-    applyTheme(key);
+    applyTheme(key, form.theme_custom);
+}
+
+// Gõ mã màu: tự thêm dấu # ở đầu, chỉ nhận ký tự hex
+function setCustom(value) {
+    const hex = '#' + String(value).replace(/[^0-9a-fA-F]/g, '').slice(0, 6).toLowerCase();
+    form.theme_custom = hex;
+    form.theme = 'custom';
+    if (HEX.test(hex)) applyTheme('custom', hex);
 }
 
 function save() {
@@ -119,12 +142,13 @@ onBeforeUnmount(revokePreview);
 
                     <fieldset class="ap-fieldset" :disabled="!canEdit">
                         <div class="field">
-                            <label for="shop-name">Tên cửa hàng</label>
+                            <label for="shop-name">Tên hiển thị <span class="app-req" aria-hidden="true">*</span></label>
                             <div class="ap-name-row">
                                 <BrandMark :logo="logoPreview" :name="form.shop_name" large />
-                                <InputText id="shop-name" v-model="form.shop_name" maxlength="60" autocomplete="off" />
+                                <InputText id="shop-name" v-model="form.shop_name" :maxlength="shopNameMax" autocomplete="off" fluid :invalid="!!form.errors.shop_name" />
                             </div>
                             <small v-if="form.errors.shop_name" class="field-error">{{ form.errors.shop_name }}</small>
+                            <small v-else class="field-hint">Hiện trên thanh bên và tab trình duyệt, tối đa {{ shopNameMax }} ký tự ({{ form.shop_name.length }}/{{ shopNameMax }}). Tên đầy đủ in hóa đơn nhập ở trang Cửa hàng.</small>
                         </div>
 
                         <div class="set-block">
@@ -180,6 +204,43 @@ onBeforeUnmount(revokePreview);
                                     </span>
                                     <span>{{ THEME_LABELS[t] ?? t }}</span>
                                 </button>
+
+                                <button
+                                    type="button"
+                                    class="theme-opt"
+                                    :class="{ 'is-on': form.theme === 'custom' }"
+                                    :aria-pressed="form.theme === 'custom'"
+                                    @click="setCustom(form.theme_custom)"
+                                >
+                                    <span class="theme-dot" :style="{ background: customValid ? form.theme_custom : '#94a3b8' }">
+                                        <i v-if="form.theme === 'custom'" class="pi pi-check" aria-hidden="true" />
+                                        <i v-else class="pi pi-palette" aria-hidden="true" />
+                                    </span>
+                                    <span>Tự chọn</span>
+                                </button>
+                            </div>
+
+                            <div v-if="form.theme === 'custom'" class="color-row">
+                                <input
+                                    type="color"
+                                    class="color-native"
+                                    :value="customValid ? form.theme_custom : '#0f766e'"
+                                    aria-label="Chọn màu"
+                                    @input="setCustom($event.target.value)"
+                                />
+                                <InputText
+                                    :modelValue="form.theme_custom"
+                                    maxlength="7"
+                                    placeholder="#0f766e"
+                                    autocomplete="off"
+                                    spellcheck="false"
+                                    aria-label="Mã màu"
+                                    :invalid="!customValid || !!form.errors.theme_custom"
+                                    @update:modelValue="setCustom"
+                                />
+                                <small v-if="form.errors.theme_custom" class="field-error">{{ form.errors.theme_custom }}</small>
+                                <small v-else-if="customTooLight" class="field-hint">Màu hơi sáng: chữ trắng trên nút bấm có thể khó đọc, nên chọn màu đậm hơn.</small>
+                                <small v-else class="field-hint">Màu này dùng cho nút bấm và điểm nhấn, các sắc nhạt/đậm được tạo tự động.</small>
                             </div>
                         </div>
 

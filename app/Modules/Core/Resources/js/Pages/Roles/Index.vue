@@ -151,7 +151,7 @@ const deleteHint = (role) =>
         >
             <form @submit.prevent="submit">
                 <div class="field">
-                    <label for="r-name">Tên vai trò</label>
+                    <label for="r-name">Tên vai trò <span class="app-req" aria-hidden="true">*</span></label>
                     <InputText
                         id="r-name"
                         v-model="form.name"

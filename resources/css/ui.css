@@ -106,13 +106,13 @@ body { background: transparent; color: var(--app-text); }
 /* ---- Menu ---- */
 .app-nav { height: 100%; overflow-y: auto; overflow-x: hidden; padding: 0.9rem 0.5rem 1.5rem; }
 .app-brandrow { display: flex; align-items: center; justify-content: space-between; padding: 0.15rem 0.5rem 1rem; }
-.app-brand { display: flex; align-items: center; gap: 0.65rem; color: var(--app-text); text-decoration: none; }
+.app-brand { min-width: 0; display: flex; align-items: center; gap: 0.65rem; color: var(--app-text); text-decoration: none; }
 .app-mark { flex: none; display: grid; place-items: center; width: 2.1rem; height: 2.1rem; border-radius: 0.65rem; background: linear-gradient(135deg, var(--p-primary-500), var(--p-primary-700)); color: #fff; font-weight: 700; overflow: hidden; box-shadow: 0 6px 14px color-mix(in srgb, var(--p-primary-700) 35%, transparent); }
 .app-mark--image { background: #fff; box-shadow: 0 2px 8px rgba(28, 58, 68, 0.15); }
 .app-mark img { width: 100%; height: 100%; object-fit: cover; }
 .app-mark--lg { width: 3.25rem; height: 3.25rem; border-radius: 0.9rem; font-size: 1.4rem; }
-.app-brand-name { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.02em; }
-.app-pin { border: 0; background: transparent; color: var(--app-muted); width: 1.9rem; height: 1.9rem; border-radius: 0.5rem; cursor: pointer; }
+.app-brand-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1.2rem; font-weight: 700; letter-spacing: -0.02em; }
+.app-pin { flex: none; border: 0; background: transparent; color: var(--app-muted); width: 1.9rem; height: 1.9rem; border-radius: 0.5rem; cursor: pointer; }
 .app-pin:hover { background: rgba(255, 255, 255, 0.7); }
 .app-pin[aria-pressed='true'] { background: var(--app-primary-soft); color: var(--app-primary); }
 .app-group { margin-bottom: 0.9rem; }
@@ -235,7 +235,7 @@ body { background: transparent; color: var(--app-text); }
 .avatar-opt:focus-visible { outline: 2px solid var(--app-primary); outline-offset: 2px; }
 
 /* ---- Trang Giao diện ---- */
-.ap-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(24rem, 1fr)); gap: 1rem; align-items: start; }
+.ap-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); gap: 1rem; align-items: start; }
 .ap-body { padding: 1.25rem; }
 .ap-fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .ap-fieldset:disabled { opacity: 0.6; }
@@ -270,7 +270,7 @@ body { background: transparent; color: var(--app-text); }
 .app-search { flex: 1; min-width: 14rem; }
 
 /* ---- Hồ sơ cá nhân ---- */
-.pf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(26rem, 1fr)); gap: 1rem; align-items: start; }
+.pf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr)); gap: 1rem; align-items: start; }
 .pf-readonly { display: flex; align-items: center; gap: 0.5rem; padding: 0.55rem 0.75rem; border-radius: 0.6rem; background: rgba(255, 255, 255, 0.5); color: var(--app-muted); }
 .pf-saved { font-size: 0.88rem; color: #15803d; }
 
@@ -296,3 +296,41 @@ body { background: transparent; color: var(--app-text); }
 
 /* Dấu sao đỏ cho ô bắt buộc */
 .app-req { color: #dc2626; margin-left: 0.15rem; font-weight: 600; }
+
+/* ---- Màu chủ đề tự chọn ---- */
+.color-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 0.75rem; margin-top: 0.75rem; }
+.color-native { flex: none; width: 3rem; height: 2.6rem; padding: 0.15rem; border: 1px solid var(--app-line); border-radius: 0.6rem; background: #fff; cursor: pointer; }
+.color-row .p-inputtext { width: 8.5rem; font-variant-numeric: tabular-nums; }
+.color-row small { flex-basis: 100%; }
+
+.st-brandrow { display: flex; align-items: flex-start; gap: 1rem; }
+.st-brandrow .field { flex: 1; min-width: 0; }
+
+/* ---- Tối ưu máy tính bảng / điện thoại ---- */
+@media (max-width: 1023px) {
+    .app-content { padding: 1rem 0.25rem 0.75rem; }
+    .p-button, .p-select, .p-inputtext, .p-inputnumber-input { min-height: 2.75rem; }
+    .p-tablist-tab-list { overflow-x: auto; scrollbar-width: none; }
+    .app-panel .p-datatable-table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .app-link { min-height: 2.75rem; }
+}
+@media (max-width: 767px) {
+    /* 16px trở lên để iOS không tự phóng to khi chạm vào ô nhập */
+    .p-inputtext, .p-inputnumber-input, .p-select-label, .p-textarea { font-size: 1rem; }
+    .p-dialog { width: 96vw !important; max-width: 96vw !important; max-height: 92vh !important; margin: 0 !important; }
+    .app-toolbar { padding: 0.75rem; }
+    .app-toolbar > * { max-width: 100%; }
+    .ap-body { padding: 0.9rem; }
+    .st-row { grid-template-columns: 1fr; }
+    .dialog-actions { flex-wrap: wrap; justify-content: stretch; }
+    .dialog-actions .p-button { flex: 1 1 auto; }
+    .app-auth-card { padding: 1.5rem 1.25rem; border-radius: 20px; }
+}
+@media (max-width: 480px) {
+    .app-content { padding-inline: 0; }
+    .app-main { padding: 0 0.25rem; }
+    .color-row .p-inputtext { width: 100%; }
+}
+
+.avatar-toggle { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 2.5rem; padding: 0 0.2rem; border: 0; background: transparent; color: var(--app-primary); font: inherit; font-size: 0.88rem; font-weight: 500; cursor: pointer; }
+.avatar-toggle:focus-visible { outline: 2px solid var(--app-primary); outline-offset: 2px; border-radius: 0.4rem; }

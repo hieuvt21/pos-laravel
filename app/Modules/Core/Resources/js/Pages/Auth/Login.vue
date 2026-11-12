@@ -37,7 +37,7 @@ const submit = () => {
 
             <form @submit.prevent="submit" novalidate>
                 <div class="field">
-                    <label for="login">Tên đăng nhập, số điện thoại hoặc email</label>
+                    <label for="login">Tên đăng nhập, số điện thoại hoặc email <span class="app-req" aria-hidden="true">*</span></label>
                     <InputText
                         id="login"
                         v-model="form.login"
@@ -52,7 +52,7 @@ const submit = () => {
                 </div>
 
                 <div class="field">
-                    <label for="password">Mật khẩu</label>
+                    <label for="password">Mật khẩu <span class="app-req" aria-hidden="true">*</span></label>
                     <Password
                         v-model="form.password"
                         inputId="password"
