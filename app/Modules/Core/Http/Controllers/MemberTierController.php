@@ -3,7 +3,6 @@
 namespace App\Modules\Core\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-
 use App\Modules\Core\Models\Setting;
 use App\Modules\Core\Support\CustomerTiers;
 use Illuminate\Http\RedirectResponse;

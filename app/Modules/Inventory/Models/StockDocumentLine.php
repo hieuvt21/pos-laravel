@@ -1,0 +1,21 @@
+<?php
+
+namespace App\Modules\Inventory\Models;
+
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+#[Fillable(['stock_document_id', 'product_id', 'qty', 'unit_cost', 'system_qty', 'diff_qty', 'note'])]
+class StockDocumentLine extends Model
+{
+    protected function casts(): array
+    {
+        return ['qty' => 'float', 'unit_cost' => 'float', 'system_qty' => 'float', 'diff_qty' => 'float'];
+    }
+
+    public function document(): BelongsTo
+    {
+        return $this->belongsTo(StockDocument::class, 'stock_document_id');
+    }
+}

@@ -6,12 +6,12 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'is_default', 'is_active'])]
+#[Fillable(['name', 'is_default', 'is_active', 'allow_decimal'])]
 class Unit extends Model
 {
     protected function casts(): array
     {
-        return ['is_active' => 'boolean', 'is_default' => 'boolean'];
+        return ['is_active' => 'boolean', 'is_default' => 'boolean', 'allow_decimal' => 'boolean'];
     }
 
     public function products(): HasMany

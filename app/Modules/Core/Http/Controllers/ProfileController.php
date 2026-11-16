@@ -3,9 +3,8 @@
 namespace App\Modules\Core\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-
-use App\Modules\Core\Http\Controllers\Concerns\ManagesIdentity;
 use App\Models\User;
+use App\Modules\Core\Http\Controllers\Concerns\ManagesIdentity;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;

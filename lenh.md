@@ -8,3 +8,10 @@ Quên mật khẩu:
 sql -> user -> Sửa cột password thành chuỗi này, tương ứng mật khẩu 123456:
 $2y$12$0ZR7Y9cPgAZHRjKeK5KlvOu6MAn7P4tLh3JtyDnvDmBOWi6yzW1Oa
 Đặt must_change_password = 1
+
+
+Fix lỗi chia nhánh từ vscode vs git:
+git push --force origin main
+
+Fix lỗi test vendor: composer update laravel/pint --with-dependencies
+

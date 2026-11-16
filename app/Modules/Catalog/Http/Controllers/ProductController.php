@@ -7,8 +7,8 @@ use App\Modules\Catalog\Models\Category;
 use App\Modules\Catalog\Models\PriceList;
 use App\Modules\Catalog\Models\Product;
 use App\Modules\Catalog\Models\Unit;
-use App\Modules\Core\Support\UniqueName;
 use App\Modules\Core\Support\DocumentNumber;
+use App\Modules\Core\Support\UniqueName;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,9 +30,9 @@ class ProductController extends Controller
         $category = $request->query('category');
         $status = in_array($request->query('status'), ['active', 'inactive'], true) ? $request->query('status') : null;
 
-        $canSeeCost = (bool) $request->user()?->can('products.update'); // giá vốn chỉ gửi cho người có quyền sửa
+        $canSeeCost = (bool) $request->user()?->can('inventory.cost'); // giá vốn chỉ gửi và sửa được với quyền xem giá vốn của kho
 
-        $products = Product::with(['category:id,name', 'unit:id,name', 'prices'])
+        $products = Product::with(['category:id,name', 'unit:id,name,allow_decimal', 'prices'])
             ->search($search)
             ->when($category === 'none', fn ($q) => $q->whereNull('category_id'))
             ->when(is_numeric($category), fn ($q) => $q->where('category_id', (int) $category))
@@ -57,6 +57,7 @@ class ProductController extends Controller
                 'image_url' => $p->image_url,
                 'qty_pricing' => $p->qty_pricing,
                 'track_stock' => $p->track_stock,
+                'min_stock' => $p->min_stock,
                 'cost_price' => $canSeeCost ? $p->cost_price : null,
                 'stock' => null, // Inventory sẽ cấp số tồn thật; chưa có thì hiện 0 với sản phẩm quản lý tồn
                 'prices' => $p->prices->map(fn ($pr) => [
@@ -70,8 +71,9 @@ class ProductController extends Controller
             'products' => $products,
             'filters' => ['search' => $search, 'category' => $category ?: null, 'status' => $status],
             'categories' => Category::orderBy('name')->get(['id', 'name', 'is_active']),
-            'units' => Unit::orderBy('name')->get(['id', 'name', 'is_default', 'is_active']),
+            'units' => Unit::orderBy('name')->get(['id', 'name', 'is_default', 'is_active', 'allow_decimal']),
             'priceLists' => PriceList::orderByDesc('is_default')->orderBy('name')->get(['id', 'name', 'is_default', 'is_active']),
+            'canCost' => $canSeeCost,
         ]);
     }
 
@@ -119,9 +121,10 @@ class ProductController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request);
+        $canCost = (bool) $request->user()?->can('inventory.cost');
 
-        DB::transaction(function () use ($data) {
-            $product = new Product($this->productFields($data));
+        DB::transaction(function () use ($data, $canCost) {
+            $product = new Product($this->productFields($data, $canCost));
             $product->code = ($data['code'] ?? null) ?: $this->nextCode();
             $product->image = $this->imageAttrs(null, $data)['image'] ?? null;
             $product->save();
@@ -136,8 +139,10 @@ class ProductController extends Controller
     {
         $data = $this->validated($request, $product);
 
-        DB::transaction(function () use ($data, $product) {
-            $product->fill($this->productFields($data));
+        $canCost = (bool) $request->user()?->can('inventory.cost');
+
+        DB::transaction(function () use ($data, $product, $canCost) {
+            $product->fill($this->productFields($data, $canCost));
             if (! empty($data['code'])) {
                 $product->code = $data['code'];
             }
@@ -185,6 +190,7 @@ class ProductController extends Controller
             'image_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'remove_image' => ['nullable', 'boolean'],
             'track_stock' => ['nullable', 'boolean'],
+            'min_stock' => ['nullable', 'numeric', 'min:0', 'max:999999999', 'decimal:0,3'],
             'cost_price' => ['nullable', 'numeric', 'min:0', 'max:9999999999'],
             'qty_pricing' => ['nullable', 'boolean'],
 
@@ -209,6 +215,9 @@ class ProductController extends Controller
             'image_file.image' => 'Tệp phải là ảnh.',
             'image_file.mimes' => 'Ảnh chỉ nhận định dạng JPG, PNG hoặc WebP.',
             'image_file.max' => 'Ảnh tối đa 2 MB.',
+            'min_stock.numeric' => 'Tồn tối thiểu phải là số.',
+            'min_stock.min' => 'Tồn tối thiểu không được âm.',
+            'min_stock.decimal' => 'Tồn tối thiểu tối đa 3 chữ số thập phân.',
             'cost_price.numeric' => 'Giá vốn phải là số.',
             'cost_price.min' => 'Giá vốn không được âm.',
             'prices.*.price.numeric' => 'Giá phải là số.',
@@ -268,9 +277,11 @@ class ProductController extends Controller
         return $data;
     }
 
-    private function productFields(array $data): array
+    /** Giá vốn chỉ ghi khi người dùng có quyền `inventory.cost`; không có quyền thì giữ nguyên giá vốn cũ (sản phẩm mới: 0). */
+    private function productFields(array $data, bool $canCost): array
     {
         return [
+            ...($canCost ? ['cost_price' => $data['cost_price'] ?? 0] : []),
             'name' => $data['name'],
             'barcode' => $data['barcode'] ?? null,
             'category_id' => $data['category_id'],
@@ -280,7 +291,7 @@ class ProductController extends Controller
             // Cờ cho module Inventory / Sales: chỉ sản phẩm bật quản lý tồn kho mới bị trừ kho khi bán.
             // Số tồn thật nằm ở sổ kho (stock_movements), tồn đầu kỳ nhập bằng phiếu nhập kho.
             'track_stock' => (bool) ($data['track_stock'] ?? false),
-            'cost_price' => $data['cost_price'] ?? 0,
+            'min_stock' => $data['min_stock'] ?? 0, // ngưỡng cảnh báo sắp hết (Inventory đọc)
             'description' => $data['description'] ?? null,
             'is_active' => (bool) $data['is_active'],
         ];

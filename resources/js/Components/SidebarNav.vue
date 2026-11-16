@@ -48,11 +48,12 @@ const pinTitle = computed(() =>
                 class="app-link"
                 :class="{ 'is-active': isActive(item) }"
                 :aria-current="isActive(item) ? 'page' : undefined"
-                :title="item.label"
+                :title="item.badge ? `${item.label} (${item.badge} cần chú ý)` : item.label"
                 @click="$emit('navigate')"
             >
                 <i :class="item.icon" aria-hidden="true" />
                 <span class="app-label">{{ item.label }}</span>
+                <span v-if="item.badge" class="app-label app-badge" :aria-label="`${item.badge} cần chú ý`">{{ item.badge > 99 ? '99+' : item.badge }}</span>
             </Link>
         </div>
     </nav>

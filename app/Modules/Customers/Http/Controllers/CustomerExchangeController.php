@@ -7,6 +7,7 @@ use App\Modules\Core\Support\CustomerTiers;
 use App\Modules\Core\Support\DocumentNumber;
 use App\Modules\Core\Support\Xlsx;
 use App\Modules\Customers\Models\Customer;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -17,6 +18,7 @@ use Throwable;
 class CustomerExchangeController extends Controller
 {
     private const MAX_ROWS = 2000;
+
     private const MAX_ERRORS = 100;
 
     /** Cột nhận diện được khi nhập (tên tiêu đề đã bỏ dấu, viết thường). */
@@ -117,11 +119,13 @@ class CustomerExchangeController extends Controller
             if ($name === '') {
                 $skipped++;
                 $errors[] = ['row' => $row['row'], 'message' => 'Thiếu họ tên.'];
+
                 continue;
             }
             if (mb_strlen($name) > 255) {
                 $skipped++;
                 $errors[] = ['row' => $row['row'], 'message' => 'Họ tên quá dài (tối đa 255 ký tự).'];
+
                 continue;
             }
 
@@ -132,11 +136,13 @@ class CustomerExchangeController extends Controller
             if ($phone !== '' && ! preg_match('/^\d{10}$/', $phone)) {
                 $skipped++;
                 $errors[] = ['row' => $row['row'], 'message' => "Số điện thoại \"{$get('phone')}\" không đủ 10 số."];
+
                 continue;
             }
             if ($phone !== '' && isset($existing[$phone])) {
                 $skipped++;
                 $errors[] = ['row' => $row['row'], 'message' => 'Số điện thoại '.$this->formatPhone($phone).' đã tồn tại.'];
+
                 continue;
             }
 
@@ -145,6 +151,7 @@ class CustomerExchangeController extends Controller
             } catch (\InvalidArgumentException $e) {
                 $skipped++;
                 $errors[] = ['row' => $row['row'], 'message' => $e->getMessage()];
+
                 continue;
             }
 
@@ -263,13 +270,13 @@ class CustomerExchangeController extends Controller
         } elseif (preg_match('#^(\d{4})-(\d{1,2})-(\d{1,2})#', $value, $p)) {
             [$y, $m, $d] = [(int) $p[1], (int) $p[2], (int) $p[3]];
         } elseif (preg_match('/^\d{4,6}(\.0+)?$/', $value)) {
-            $date = \Carbon\Carbon::create(1899, 12, 30)->addDays((int) $value); // số ngày Excel
+            $date = Carbon::create(1899, 12, 30)->addDays((int) $value); // số ngày Excel
             [$y, $m, $d] = [$date->year, $date->month, $date->day];
         } else {
             throw $fail();
         }
 
-        if (! checkdate($m, $d, $y) || $y < 1900 || \Carbon\Carbon::create($y, $m, $d)->isFuture()) {
+        if (! checkdate($m, $d, $y) || $y < 1900 || Carbon::create($y, $m, $d)->isFuture()) {
             throw $fail();
         }
 

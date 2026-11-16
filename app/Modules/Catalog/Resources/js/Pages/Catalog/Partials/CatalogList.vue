@@ -27,7 +27,7 @@ const confirm = useConfirm();
 const dialog = ref(false);
 const editing = ref(null);
 
-const form = useForm({ name: '', description: '', is_default: false, is_active: true });
+const form = useForm({ name: '', description: '', is_default: false, allow_decimal: false, is_active: true });
 
 // Chặn trùng tên ngay khi nhập (khi sửa: bỏ qua chính mục đang sửa)
 const nameCheck = useUniqueCheck('name', () => form.name, {
@@ -58,6 +58,7 @@ function openEdit(item) {
     form.name = item.name;
     form.description = item.description ?? '';
     form.is_default = !!item.is_default;
+    form.allow_decimal = !!item.allow_decimal;
     form.is_active = !!item.is_active;
     dialog.value = true;
 }
@@ -109,6 +110,7 @@ function remove(item) {
             <template #body="{ data }">
                 {{ data.name }}
                 <Tag v-if="data.is_default" value="Mặc định" severity="info" style="margin-left: 0.4rem" />
+                <Tag v-if="isUnit && data.allow_decimal" value="Cho phép số lẻ" severity="secondary" style="margin-left: 0.4rem" />
             </template>
         </Column>
         <Column v-if="isCategory" field="description" header="Mô tả">
@@ -178,6 +180,11 @@ function remove(item) {
             <div v-if="hasDefault" class="field" style="flex-direction: row; align-items: center; gap: 0.5rem">
                 <Checkbox v-model="form.is_default" inputId="c-default" binary :disabled="editing?.is_default" />
                 <label for="c-default">{{ isUnit ? 'Dùng làm đơn vị mặc định khi thêm sản phẩm' : 'Dùng làm bảng giá mặc định' }}</label>
+            </div>
+
+            <div v-if="isUnit" class="field" style="flex-direction: row; align-items: center; gap: 0.5rem">
+                <Checkbox v-model="form.allow_decimal" inputId="c-decimal" binary />
+                <label for="c-decimal">Cho phép số lượng lẻ (ví dụ kg, lít)</label>
             </div>
 
             <div class="field" style="flex-direction: row; align-items: center; gap: 0.5rem">

@@ -7,11 +7,10 @@ use App\Modules\Catalog\Models\Category;
 use App\Modules\Catalog\Models\PriceList;
 use App\Modules\Catalog\Models\Unit;
 use App\Modules\Core\Support\UniqueName;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -136,6 +135,7 @@ class CatalogController extends Controller
         }
         if ($type === 'units') {
             $rules['is_default'] = ['required', 'boolean'];
+            $rules['allow_decimal'] = ['sometimes', 'boolean']; // cho phép số lượng lẻ (kg, lít...)
         }
 
         return $request->validate($rules, $messages);

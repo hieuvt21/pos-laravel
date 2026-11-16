@@ -15,6 +15,10 @@ final class ModuleRegistry
     private const GROUP_ORDER = [
         'Tổng quan' => 10,
         'Bán hàng' => 20,
+        'Khách hàng' => 22,
+        'Sản phẩm' => 24,
+        'Dịch vụ' => 25,
+        'Kho' => 26,
         'Hàng hóa' => 30,
         'Báo cáo' => 40,
         'Hệ thống' => 90,
@@ -148,7 +152,7 @@ final class ModuleRegistry
         $groups = array_filter($groups, fn (array $g) => $g['items'] !== []);
         uasort($groups, fn (array $a, array $b) => $a['order'] <=> $b['order']);
 
-        return array_values(array_map(function (array $g) {
+        return array_values(array_map(function (array $g) use ($user) {
             usort($g['items'], fn (array $a, array $b) => ($a['order'] ?? 50) <=> ($b['order'] ?? 50));
 
             return [
@@ -158,8 +162,23 @@ final class ModuleRegistry
                     'icon' => $i['icon'] ?? 'pi pi-circle',
                     'route' => $i['route'],
                     'match' => $i['match'] ?? $i['route'],
+                    'badge' => $this->badge($i, $user),
                 ], $g['items']),
             ];
         }, $groups));
+    }
+
+    /** Huy hiệu số bên cạnh mục menu: `'badge' => [Class::class, 'method']`, gọi với người dùng, trả số hoặc null. Lỗi thì bỏ huy hiệu, không làm hỏng menu. */
+    private function badge(array $item, ?Authenticatable $user): ?int
+    {
+        if (! isset($item['badge']) || ! is_callable($item['badge'])) {
+            return null;
+        }
+
+        try {
+            return ($item['badge'])($user) ?: null;
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }

@@ -31,7 +31,7 @@ resources/css/{app.css,ui.css}
 ## API công khai (module khác được gọi)
 **Backend**
 - `Setting::read($key)`, `Setting::finance()`, `Setting::storeInfo()`, `Setting::branding()`.
-- `DocumentNumber::next('invoice'|'sale_return'|'purchase'|'stock_check'|'cash_in'|'cash_out'|'shift'|'product'|'customer'|'supplier')`.
+- `DocumentNumber::next('invoice'|'sale_return'|'purchase'|'stock_in'|'stock_out'|'stock_check'|'service'|'cash_in'|'cash_out'|'shift'|'product'|'customer'|'supplier')`. Thứ tự nhóm menu cố định trong `ModuleRegistry::GROUP_ORDER` (Tổng quan, Bán hàng, Khách hàng, Sản phẩm, Dịch vụ, Kho, Hàng hóa, Báo cáo, Hệ thống); nhóm không có trong danh sách (hoặc không khai `order`) xếp ở mức 80. Mục menu có thể khai `'badge' => [Class::class, 'method']`: hàm tĩnh nhận người dùng và trả số (hoặc null) hiện thành huy hiệu đỏ cạnh mục; lỗi khi tính thì bỏ huy hiệu, không làm hỏng menu.
 - `Money::round($n)`, `Money::format($n)`.
 - `CustomerTiers::for($spent)` (hạng + hạng kế tiếp), `discountFor($spent)`, `config()`, `enabled()`; setting `customer_tiers`.
 - `ModuleRegistry` (đọc module.php): `permissionNames()`, `permissionGroups()`, `defaultRoles()`, `navigation($user)`.

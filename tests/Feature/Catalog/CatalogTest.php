@@ -136,7 +136,7 @@ it('ngừng bán / bán lại; giá vốn chỉ gửi cho người có quyền s
     expect($p->fresh()->is_active)->toBeFalse();
 
     $this->actingAs($this->admin)->get(route('products.index'))
-        ->assertInertia(fn ($page) => $page->where('products.data.0.cost_price', '3000.00'));
+        ->assertInertia(fn ($page) => $page->where('products.data.0.cost_price', 3000));
 
     $u = (new User)->forceFill(['name' => 'Thu ngân', 'username' => 'thungan2', 'password' => bcrypt('123456'), 'must_change_password' => false]);
     $u->save();

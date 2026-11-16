@@ -31,6 +31,7 @@ const props = defineProps({
     categories: { type: Array, default: () => [] },
     units: { type: Array, default: () => [] },
     priceLists: { type: Array, default: () => [] },
+    canCost: { type: Boolean, default: false },
 });
 
 const { can } = usePermission();
@@ -151,6 +152,7 @@ const form = useForm({
     qty_pricing: false, // bật "Giá theo số lượng"
     tiers: {}, // { [price_list_id]: { min_qty, price } } cho các bảng giá khác
     track_stock: false,
+    min_stock: null,
     cost_price: null,
 });
 
@@ -173,6 +175,7 @@ const tierLists = computed(() => props.priceLists.filter((l) => l.is_active && !
 const categoryOptions = computed(() => props.categories.filter((c) => c.is_active || c.id === form.category_id));
 const unitOptions = computed(() => props.units.filter((u) => u.is_active || u.id === form.unit_id));
 const defaultUnitId = computed(() => props.units.find((u) => u.is_default && u.is_active)?.id ?? null);
+const unitAllowsDecimal = computed(() => !!props.units.find((u) => u.id === form.unit_id)?.allow_decimal);
 const unitName = computed(() => props.units.find((u) => u.id === form.unit_id)?.name ?? 'đơn vị tính');
 const fractionDigits = computed(() => Number(config.value.decimals) || 0);
 const err = (key) => form.errors[key];
@@ -241,6 +244,7 @@ function openEdit(p) {
     form.remove_image = false;
     form.qty_pricing = p.qty_pricing;
     form.track_stock = p.track_stock;
+    form.min_stock = p.min_stock ? Number(p.min_stock) : null;
     form.cost_price = p.cost_price ? Number(p.cost_price) : null;
 
     form.retail_price = p.prices.find((x) => x.price_list_id === defaultList.value?.id)?.price ?? null;
@@ -267,6 +271,7 @@ function submit() {
             is_active: data.is_active,
             qty_pricing: data.qty_pricing,
             track_stock: data.track_stock,
+            min_stock: data.track_stock ? (data.min_stock ?? 0) : 0,
             cost_price: data.cost_price ?? 0,
             // Bảng giá mặc định (bán lẻ) đứng đầu, sau đó là các bảng giá khác; số lượng chỉ gửi khi bật tự động chuyển giá
             prices: [
@@ -338,6 +343,7 @@ function duplicate(p) {
     form.is_active = p.is_active;
     form.qty_pricing = p.qty_pricing;
     form.track_stock = p.track_stock;
+    form.min_stock = p.min_stock ? Number(p.min_stock) : null;
     form.cost_price = p.cost_price ? Number(p.cost_price) : null;
     form.retail_price = p.prices.find((x) => x.price_list_id === defaultList.value?.id)?.price ?? null;
     const tiers = emptyTiers();
@@ -715,7 +721,7 @@ const subline = (p) => [p.code, p.category, p.unit].filter(Boolean).join(' · ')
                         />
                         <small v-if="err('prices.0.price')" class="field-error">{{ err('prices.0.price') }}</small>
                     </div>
-                    <div class="field">
+                    <div v-if="canCost" class="field">
                         <label for="p-cost">Giá vốn</label>
                         <InputNumber v-model="form.cost_price" inputId="p-cost" :min="0" :maxFractionDigits="0" locale="vi-VN" placeholder="0" fluid :invalid="!!err('cost_price')" />
                         <small v-if="err('cost_price')" class="field-error">{{ err('cost_price') }}</small>
@@ -783,6 +789,21 @@ const subline = (p) => [p.code, p.category, p.unit].filter(Boolean).join(' · ')
                     <div class="pr-check">
                         <Checkbox v-model="form.track_stock" inputId="p-track" binary />
                         <label for="p-track">Quản lý tồn kho</label>
+                    </div>
+                    <div v-if="form.track_stock" class="field">
+                        <label for="p-min">Tồn tối thiểu ({{ unitName }})</label>
+                        <InputNumber
+                            v-model="form.min_stock"
+                            inputId="p-min"
+                            :min="0"
+                            :maxFractionDigits="unitAllowsDecimal ? 3 : 0"
+                            locale="vi-VN"
+                            placeholder="0"
+                            fluid
+                            :invalid="!!err('min_stock')"
+                        />
+                        <small v-if="err('min_stock')" class="field-error">{{ err('min_stock') }}</small>
+                        <small v-else class="field-hint">Tồn từ mức này trở xuống sẽ báo "sắp hết". Để 0 nếu không cần cảnh báo.</small>
                     </div>
                     <small class="field-hint pr-hint-block">
                         Bật thì khi bán sẽ trừ kho và không cho bán quá số lượng tồn. Tồn đầu kỳ nhập bằng phiếu nhập kho. Tắt thì không theo dõi số lượng.

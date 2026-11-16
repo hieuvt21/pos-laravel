@@ -11,7 +11,12 @@ Migration tạo sẵn đơn vị "Cái" và bảng giá "Bán lẻ". Xóa sản 
 - `CatalogService::findByBarcode($code)`: khớp mã vạch trước, không có thì khớp mã sản phẩm; chỉ sản phẩm đang bán.
 - `CatalogService::priceFor($product, $qty, $priceListId = null)`: bảng giá chỉ định > giá theo số lượng (mức min_qty cao nhất đạt tới, khi `qty_pricing`) > giá bán lẻ.
 - Cờ `products.track_stock`: Inventory/Sales dùng để biết có trừ kho hay không. Số tồn thật nằm ở Inventory (`stock_movements`).
-- `products.cost_price`: ban đầu nhập tay; Inventory sẽ cập nhật bình quân khi có nhập hàng.
+- `products.cost_price`: ban đầu nhập tay; Inventory cập nhật bình quân khi có nhập hàng (qua `CatalogService::setCostPrice($id, $cost)`).
+- Giá vốn (`products.cost_price`) chỉ gửi xuống và sửa được với quyền `inventory.cost` (không phải `products.update`); thiếu quyền thì form không có ô giá vốn, sửa sản phẩm giữ nguyên giá vốn cũ, thêm mới thì 0.
+- `CatalogService::lookupByCodes($keys)`: tra sản phẩm theo mã hoặc mã vạch (nhập Excel của Inventory).
+- `CatalogService::trackedProducts($search, $categoryId)`, `productBrief($id)`, `briefs($ids)`, `categoryOptions()`: dữ liệu dạng mảng cho trang Tồn kho, thẻ kho và phiếu kho của Inventory.
+- `CatalogService::stockProfile($id)`: mảng `id, track_stock, allow_decimal, cost_price, min_stock` cho Inventory (gồm cả sản phẩm xóa mềm); null nếu không có.
+- `units.allow_decimal` (mặc định tắt): đơn vị cho phép số lượng lẻ (kg, lít). `products.min_stock` (mặc định 0): ngưỡng cảnh báo sắp hết, nhập ở form sản phẩm khi bật quản lý tồn. Migration `..._300001`.
 
 ## Chặn trùng và phân trang
 - Tên sản phẩm (chưa xóa), danh mục, đơn vị, bảng giá: không trùng, không phân biệt hoa thường nhưng phân biệt dấu ("Cá" khác "Ca"). Kiểm tra khi đang nhập qua `products.check` / `catalog.check` (dùng `useUniqueCheck('name', ...)`) và lại ở server (`Core\Support\UniqueName`). Migration `..._200002` đổi cột tên sang `utf8mb4_bin` để chỉ mục duy nhất phân biệt dấu.

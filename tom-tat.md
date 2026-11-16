@@ -96,8 +96,8 @@ Chi tiết ở `docs/modules/core.md`. Tóm tắt:
 
 - **Sản phẩm:** mỗi sản phẩm **một đơn vị tính** (`unit_id`), thuế chung (`tax_rate`). **Không có đơn vị quy đổi, không có biến thể** (muốn bán theo thùng thì tạo sản phẩm riêng).
 - **Giá:** ở `product_prices` (mỗi bảng giá một dòng; bán lẻ = bảng giá mặc định, bắt buộc). POS luôn chọn thủ công được bảng giá. **Giá theo số lượng** (`products.qty_pricing`, mặc định tắt): bảng giá khác bán lẻ có `min_qty`; khi bật và số lượng dòng >= `min_qty` thì POS hỏi áp dụng giá đó (nhiều mức: lấy `min_qty` lớn nhất đã đạt).
-- **Tồn kho:** `products.track_stock` (mặc định tắt) + `opening_stock`; chỉ sản phẩm bật mới bị trừ kho khi bán và **không cho tồn âm**. Module Kho ghi sổ bằng **phiếu nhập/xuất (`stock_movements`)**, `opening_stock` là phiếu nhập tồn đầu kỳ; tồn hiện tại = tổng movement, cache ở cột tồn trong cùng transaction.
-- `products.cost_price` (mặc định 0) dành cho Nhập hàng; giá vốn bình quân gia quyền.
+- **Tồn kho:** `products.track_stock` (mặc định tắt); chỉ sản phẩm bật mới bị trừ kho khi bán. **Mặc định không cho tồn âm**, có công tắc cho phép (Setting `inventory.allow_negative`, bật thì POS cảnh báo). Module Inventory ghi sổ bằng `stock_movements` (chỉ thêm), tồn hiện tại cache ở bảng `stock_levels` của Inventory (không ghi vào bảng Catalog). Tồn đầu kỳ nhập bằng phiếu nhập kho (không có ô ở form sản phẩm). **Không có huỷ phiếu**: sai thì lập phiếu ngược hoặc kiểm kho. Số lượng tối đa 3 chữ số thập phân; số lẻ chỉ khi `units.allow_decimal`. `products.min_stock` là ngưỡng "sắp hết".
+- `products.cost_price` (mặc định 0): Inventory cập nhật bình quân gia quyền khi nhập có giá (qua `CatalogService::setCostPrice`); xuất/bán/kiểm kho không đổi giá vốn. Trả hàng nhập lại theo giá vốn snapshot trên hóa đơn gốc. Giá vốn chỉ hiện và sửa được với quyền `inventory.cost` (kể cả ô giá vốn ở form sản phẩm).
 - **Hoá đơn:** snapshot tên, giá, giá vốn tại thời điểm bán. Bán hàng chạy trong transaction + `lockForUpdate` trên tồn; mỗi hoá đơn gắn **mã duy nhất do trình duyệt sinh (idempotency key)** để bấm đúp/mạng chập chờn không ra hai hoá đơn.
 - **Khách hàng:** `customers.total_spent` do POS cộng dồn; giảm giá theo hạng: `CustomerTiers::discountFor($total_spent)` (Setting `customer_tiers`). SĐT 10 số, duy nhất.
 - In hoá đơn bằng CSS `@media print` (khổ 58/80mm).
@@ -117,7 +117,9 @@ Purchasing -> Inventory | Sales -> Catalog, Inventory, Customers | Reports chỉ
 - [ ] 0b. Thử deploy lên cPanel bằng workflow + `deploy-helper.php` (xác nhận PHP 8.4, zip, migrate, pos:sync)
 - [x] 2. Catalog (danh mục, đơn vị tính, bảng giá, sản phẩm) = module mẫu - code xong, chờ chạy thử
 - [x] 3. Customers (khách hàng, giới tính, nhập/xuất Excel theo quyền) - code xong, chờ chạy thử
-- [ ] 4. Inventory -> 5. Purchasing -> 6. Sales/POS (+ mẫu hoá đơn, phương thức thanh toán, chính sách giảm giá/hoàn trả) -> 7. Ca làm việc -> 8. Portal (cổng khách) -> 9. Báo cáo -> 10. Sao lưu, nhật ký hoạt động, tối ưu
+- [ ] 4. Inventory: **(a) `StockService`, (b) Tồn kho + thẻ kho: đã chạy thử. (c) phiếu nhập/xuất, (d) kiểm kho, (e) huy hiệu "sắp hết" + nhập Excel tồn đầu kỳ: code xong, chờ chạy thử.** Module hoàn chỉnh theo kế hoạch. Xem `docs/modules/inventory.md`
+- [ ] Dịch vụ (module `ServiceCatalog`, làm trước Bán hàng): **code xong, chờ chạy thử.** Danh mục dịch vụ riêng, dịch vụ giá cố định (không đơn vị, không tồn kho), hoa hồng nhân viên tính từ một ô định mức (₫ hoặc %, tối đa 100%). Xem `docs/modules/service-catalog.md`
+- [ ] 5. Purchasing -> 6. Sales/POS (+ mẫu hoá đơn, phương thức thanh toán, chính sách giảm giá/hoàn trả) -> 7. Ca làm việc -> 8. Portal (cổng khách) -> 9. Báo cáo -> 10. Sao lưu, nhật ký hoạt động, tối ưu
 
 ## 9. Quyết định đã chốt
 
@@ -134,15 +136,37 @@ Purchasing -> Inventory | Sales -> Catalog, Inventory, Customers | Reports chỉ
 | 9 | Khách đăng nhập bằng guard `customer` riêng, `/portal/login` riêng | Tách hẳn quyền nhân viên |
 | 10 | Deploy: GitHub Actions build -> FTP zip -> `deploy-helper.php` chạy migrate + `pos:sync` | cPanel không SSH/Node |
 | 11 | Tên cửa hàng mặc định "Pos" | Theo yêu cầu |
+| 12 | Inventory: bỏ "huỷ phiếu"; sai thì lập phiếu ngược hoặc kiểm kho | Huỷ phiếu kéo theo tồn âm, lệch giá vốn bình quân; shop nhỏ hiếm dùng |
+| 13 | Số tồn cache ở `stock_levels` (Inventory), không thêm cột vào `products` | Giữ ranh giới module; khóa dòng tồn không khóa dòng sản phẩm |
+| 14 | Cho phép số lẻ theo đơn vị tính (`units.allow_decimal`), không theo công tắc chung | Cửa hàng vừa bán cân (kg) vừa bán cái |
+| 15 | Tồn âm: công tắc `inventory.allow_negative`, mặc định tắt | Chặn bán quá tồn; cần thì bật và POS cảnh báo |
+| 16 | Nhà cung cấp làm đơn giản, là mục con của Kho (không tách module), dùng quyền `inventory.receive`; chỉ ghi nguồn của phiếu nhập, chưa có công nợ | Cửa hàng chỉ cần biết hàng nhập từ đâu; công nợ để Purchasing nếu sau này cần |
+| 17 | Dịch vụ là module riêng `ServiceCatalog`, làm đơn giản: giá cố định, không đơn vị, không tồn kho, không thuế riêng, không Excel | Cửa hàng vừa bán sản phẩm vừa cung cấp dịch vụ; Bán hàng sau này bán chung một hóa đơn |
+| 18 | Hoa hồng dịch vụ khai báo bằng một ô "định mức" (₫ hoặc %); số tiền hoa hồng không lưu mà tính từ giá và định mức; % tối đa 100, định mức tiền tối đa bằng giá | Đổi giá thì hoa hồng tự theo; hoa hồng không thể vượt giá dịch vụ |
+| 19 | Dịch vụ bắt buộc thuộc một danh mục dịch vụ đang sử dụng | Báo cáo và Bán hàng sau này nhóm theo danh mục; tránh dịch vụ "không phân loại" |
 
 ## 10. Việc đang làm / bước tiếp theo
+
+- Vừa xong (chờ chạy thử): chỉnh Dịch vụ: bắt buộc chọn danh mục; nút ₫/% gắn liền ô định mức, Định mức và Hoa hồng cùng một dòng, hoa hồng tính lại ngay khi gõ (`@input`); thanh cuộn của menu bên trái mảnh (5px), ẩn hẳn và CHỈ hiện khi rê chuột vào vùng menu (`.app-nav` trong `ui.css`, Chrome/Edge/Safari dùng `::-webkit-scrollbar`, Firefox dùng `scrollbar-color`). Không dùng `:focus-within` vì sau khi bấm một mục menu, mục đó giữ focus làm thanh cuộn hiện mãi.
+
+- Vừa xong (chờ chạy thử): module `ServiceCatalog` (Dịch vụ): migration `..._100001` (`service_categories`, `services`), `Service` (xóa mềm, `commission` tự tính), `Commission::amount`, `ServiceCatalogService` (`find`, `search`), `ServiceController` + `ServiceCategoryController` (route `services.*`, `service_categories.*`), trang `Services/Index.vue` (ô định mức ₫/% + ô hoa hồng chỉ đọc) và `Services/Categories.vue`, menu nhóm Dịch vụ (giữa Sản phẩm và Kho, `GROUP_ORDER` 25), khóa số `service` (DV). Test: `CommissionTest`, `ServiceTest`, `ServiceCategoryTest`.
+
+- Vừa xong (chờ chạy thử): Nhà cung cấp (bản đơn giản) trong Kho: migration `..._500001` (bảng `suppliers`, `stock_documents.supplier_id`), `Supplier`, `SupplierController` (route `inventory.suppliers.*`), trang `Suppliers/Index.vue`, ô chọn nhà cung cấp ở phiếu nhập và nhập Excel, cột và bộ lọc nhà cung cấp ở danh sách phiếu, hiện ở chi tiết phiếu và thẻ kho, mục menu "Nhà cung cấp". Test `SupplierTest`.
+
+- Vừa xong (chờ chạy thử): Inventory bước (d) và (e): `StockCountService` + `StockCountController` (kiểm kho: nháp, lưu, xác nhận, xóa nháp; báo khi tồn đã đổi từ lúc lưu nháp), `StockImportController` (nhập Excel/CSV tồn đầu kỳ, cả file một phiếu, có lỗi thì không nhập gì), `StockAlerts` (huy hiệu sắp hết/hết hàng trên menu, cache 5 phút, xóa khi có phát sinh kho), trang `Counts/{Create,Edit}.vue`, `Import.vue`, huy hiệu menu (`ModuleRegistry` khóa `badge`, `SidebarNav.vue`, `ui.css`), `CatalogService::lookupByCodes`. Chuyển quyền xem/sửa giá vốn ở Catalog sang `inventory.cost` (thiếu quyền thì giữ nguyên giá vốn cũ). Sửa lỗi thiếu dấu ngoặc kép đóng ở nút Cài đặt của `Inventory/Index.vue` (có trong gói bước c). Test mới: `StockCountTest`, `StockImportTest`, `StockAlertsTest`. Các file Vue đã biên dịch thử bằng `@vue/compiler-sfc` ở môi trường soạn code; Pest, Pint và `npm run build` thì chưa chạy được ở đó.
+
+- Đã xong code, chờ chạy thử: Inventory bước (c): `StockDocumentService`, `StockDocumentController`, route `inventory.documents.index|show`, `inventory.receipts.create|store`, `inventory.issues.create|store`, `inventory.products.search`, trang `Documents/{Index,Show,Form}.vue`, menu Phiếu kho/Nhập kho/Xuất kho, `inventory.css` dùng chung, `CatalogService::briefs`, thứ tự nhóm menu Khách hàng → Sản phẩm → Kho (`ModuleRegistry::GROUP_ORDER`), test `StockDocumentTest`. Chưa chạy được Pest/Pint/build ở môi trường soạn code.
+
+- Đã chạy thử: Inventory bước (b): `StockController` (index, card, updateSettings), route `inventory.index|card|settings`, trang `Inventory/Index.vue` + `StockCard.vue`, menu Kho, `CatalogService::trackedProducts/productBrief/categoryOptions`, test `StockPagesTest`. Chưa chạy được Pest/Pint ở môi trường soạn code.
+
+- Đã chạy thử: Inventory bước (a) (52 test pass, Pint sạch):  migration Catalog (`units.allow_decimal`, `products.min_stock`) và Inventory (`stock_levels`, `stock_documents`, `stock_document_lines`, `stock_movements`), `StockService`, quyền `inventory.*`, khóa số phiếu `stock_in` (NK)/`stock_out` (XK) ở Core, ô "Cho phép số lẻ" (đơn vị) và "Tồn tối thiểu" (sản phẩm). Chưa có route/menu. Xem `docs/modules/inventory.md`. Chưa chạy được Pest/Pint ở môi trường soạn code, cần chạy `pest` và `pint` trên máy bạn.
 
 - Vừa xong (chờ chạy thử): module Catalog (sản phẩm, danh mục, đơn vị, bảng giá, giá theo số lượng, `CatalogService`). Xem `docs/modules/catalog.md`. Chưa có nhập/xuất Excel sản phẩm.
 
 - Vừa xong (chờ chạy thử): module Customers (danh sách, thêm/sửa/xóa mềm, chọn giới tính -> ảnh nam/nữ, nhập/xuất Excel, `CustomerService`). Xem `docs/modules/customers.md`.
 
 - Đang làm: chạy thử Core trên Laragon (đăng nhập `admin`/`admin` -> đổi mật khẩu -> các trang Core).
-- Tiếp theo: chạy thử Core + Customers + Catalog, 0b (deploy thử), rồi Inventory.
+- Tiếp theo: chạy thử Dịch vụ và Nhà cung cấp (`php artisan migrate`, `pos:sync`, `npm run build`, `pest`), 0b (deploy thử), rồi Bán hàng/POS (bán chung sản phẩm và dịch vụ; ghi hoa hồng nhân viên theo dòng dịch vụ).
 - Còn mở: chưa có nhật ký hoạt động (activitylog); `useUniqueCheck` còn nhắc route `customers.check`/`products.check` (sẽ có khi làm module tương ứng); bước tải FTP trong workflow đang dùng `--insecure` (bỏ kiểm tra chứng chỉ) nên đổi nếu host có chứng chỉ hợp lệ.
 
 ## 11. Làm việc với AI
