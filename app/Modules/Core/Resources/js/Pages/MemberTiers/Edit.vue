@@ -10,6 +10,7 @@ import ToggleSwitch from 'primevue/toggleswitch';
 import TierBadge from '@/Components/TierBadge.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { useMoney } from '@/composables/useMoney';
+import HelpTip from '@/Components/HelpTip.vue';
 
 const props = defineProps({
     config: { type: Object, required: true },
@@ -137,10 +138,8 @@ function save() {
                 <div class="st-switch-row">
                     <ToggleSwitch v-model="form.enabled" inputId="tr-enabled" />
                     <label for="tr-enabled">Áp dụng giảm giá theo hạng</label>
+                    <HelpTip>Hạng luôn hiện trên danh sách khách. Tắt thì chỉ không giảm giá theo hạng.</HelpTip>
                 </div>
-                <p class="field-hint" style="margin: 0.4rem 0 1rem">
-                    Hạng luôn hiện trên danh sách khách. Tắt thì chỉ không giảm giá theo hạng.
-                </p>
 
                 <fieldset class="ap-fieldset" :disabled="!form.enabled">
                     <div class="tr-head" aria-hidden="true">
@@ -295,7 +294,7 @@ function save() {
                             :disabled="form.tiers.length >= MAX_TIERS"
                             @click="addTier"
                         />
-                        <small class="field-hint" style="margin-left: 0.6rem">Tối đa {{ MAX_TIERS }} hạng, mức chi tiêu tăng dần từ trên xuống. Giảm giá tối đa 100%.</small>
+                        <HelpTip>Tối đa {{ MAX_TIERS }} hạng, mức chi tiêu tăng dần từ trên xuống. Giảm giá tối đa 100%.</HelpTip>
                     </div>
                 </fieldset>
 

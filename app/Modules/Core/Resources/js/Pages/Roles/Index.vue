@@ -11,6 +11,7 @@ import { useConfirm } from 'primevue/useconfirm';
 import AppDialog from '@/Components/AppDialog.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { roleLabel, roleSeverity } from '@/utils/labels';
+import FieldLabel from '@/Components/FieldLabel.vue';
 
 defineProps({
     roles: { type: Array, default: () => [] },
@@ -151,7 +152,9 @@ const deleteHint = (role) =>
         >
             <form @submit.prevent="submit">
                 <div class="field">
-                    <label for="r-name">Tên vai trò <span class="app-req" aria-hidden="true">*</span></label>
+                    <FieldLabel for="r-name">Tên vai trò <span class="app-req" aria-hidden="true">*</span>
+                        <template v-if="editing && editing.system" #help>Tên vai trò mặc định không đổi được.</template>
+                    </FieldLabel>
                     <InputText
                         id="r-name"
                         v-model="form.name"
@@ -159,9 +162,6 @@ const deleteHint = (role) =>
                         autocomplete="off"
                         fluid
                     />
-                    <small v-if="editing && editing.system" class="field-hint">
-                        Tên vai trò mặc định không đổi được.
-                    </small>
                     <small v-if="form.errors.name" class="field-error">{{ form.errors.name }}</small>
                 </div>
 

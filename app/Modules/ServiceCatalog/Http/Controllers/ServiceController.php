@@ -3,11 +3,11 @@
 namespace App\Modules\ServiceCatalog\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Core\Support\Commission;
 use App\Modules\Core\Support\DocumentNumber;
 use App\Modules\Core\Support\UniqueName;
 use App\Modules\ServiceCatalog\Models\Service;
 use App\Modules\ServiceCatalog\Models\ServiceCategory;
-use App\Modules\ServiceCatalog\Support\Commission;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

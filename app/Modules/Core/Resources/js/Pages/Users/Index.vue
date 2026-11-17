@@ -21,6 +21,7 @@ import { usePermission } from '@/composables/usePermission';
 import { useUniqueCheck } from '@/composables/useUniqueCheck';
 import { formatPhone } from '@/utils/phone';
 import { roleLabel, roleSeverity } from '@/utils/labels';
+import FieldLabel from '@/Components/FieldLabel.vue';
 
 const props = defineProps({
     users: { type: Array, default: () => [] },
@@ -248,7 +249,9 @@ function remove(u) {
                 </div>
 
                 <div class="field">
-                    <label for="u-username">Tên đăng nhập <span class="app-req" aria-hidden="true">*</span></label>
+                    <FieldLabel for="u-username">Tên đăng nhập <span class="app-req" aria-hidden="true">*</span>
+                        <template #help>Chữ thường không dấu, số, dấu chấm, gạch dưới hoặc gạch ngang.</template>
+                    </FieldLabel>
                     <InputText
                         id="u-username"
                         :modelValue="form.username"
@@ -262,13 +265,12 @@ function remove(u) {
                     />
                     <small v-if="form.errors.username" class="field-error">{{ form.errors.username }}</small>
                     <FieldStatus v-else :status="usernameCheck.status" :message="usernameCheck.message" />
-                    <small v-if="!form.errors.username && usernameCheck.status === 'idle'" class="field-hint">
-                        Chữ thường không dấu, số, dấu chấm, gạch dưới hoặc gạch ngang.
-                    </small>
                 </div>
 
                 <div class="field">
-                    <label for="u-phone">Số điện thoại</label>
+                    <FieldLabel for="u-phone">Số điện thoại
+                        <template #help>Gồm 10 số. Có thể dùng để đăng nhập.</template>
+                    </FieldLabel>
                     <PhoneInput
                         id="u-phone"
                         v-model="form.phone"
@@ -277,9 +279,6 @@ function remove(u) {
                     />
                     <small v-if="form.errors.phone" class="field-error">{{ form.errors.phone }}</small>
                     <FieldStatus v-else :status="phoneCheck.status" :message="phoneCheck.message" />
-                    <small v-if="!form.errors.phone && phoneCheck.status === 'idle'" class="field-hint">
-                        Gồm 10 số. Có thể dùng để đăng nhập.
-                    </small>
                 </div>
 
                 <div class="field">
@@ -299,7 +298,9 @@ function remove(u) {
                 </div>
 
                 <div class="field">
-                    <label for="u-password">{{ editing ? 'Mật khẩu mới' : 'Mật khẩu' }}<span v-if="!editing" class="app-req" aria-hidden="true">*</span></label>
+                    <FieldLabel for="u-password">{{ editing ? 'Mật khẩu mới' : 'Mật khẩu' }}<span v-if="!editing" class="app-req" aria-hidden="true">*</span>
+                        <template #help>{{ editing ? 'Bỏ trống nếu không đổi mật khẩu.' : 'Tối thiểu 6 ký tự.' }}</template>
+                    </FieldLabel>
                     <Password
                         v-model="form.password"
                         inputId="u-password"
@@ -310,13 +311,12 @@ function remove(u) {
                         :invalid="!!form.errors.password"
                     />
                     <small v-if="form.errors.password" class="field-error">{{ form.errors.password }}</small>
-                    <small v-else class="field-hint">
-                        {{ editing ? 'Bỏ trống nếu không đổi mật khẩu.' : 'Tối thiểu 6 ký tự.' }}
-                    </small>
                 </div>
 
                 <div class="field">
-                    <label for="u-role">Vai trò <span class="app-req" aria-hidden="true">*</span></label>
+                    <FieldLabel for="u-role">Vai trò <span class="app-req" aria-hidden="true">*</span>
+                        <template v-if="editing && isSelf(editing)" #help>Bạn không thể đổi vai trò của chính mình.</template>
+                    </FieldLabel>
                     <Select
                         v-model="form.role"
                         inputId="u-role"
@@ -328,9 +328,6 @@ function remove(u) {
                         fluid
                         :invalid="!!form.errors.role"
                     />
-                    <small v-if="editing && isSelf(editing)" class="field-hint">
-                        Bạn không thể đổi vai trò của chính mình.
-                    </small>
                     <small v-if="form.errors.role" class="field-error">{{ form.errors.role }}</small>
                 </div>
 

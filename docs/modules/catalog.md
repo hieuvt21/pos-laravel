@@ -13,6 +13,10 @@ Migration tạo sẵn đơn vị "Cái" và bảng giá "Bán lẻ". Xóa sản 
 - Cờ `products.track_stock`: Inventory/Sales dùng để biết có trừ kho hay không. Số tồn thật nằm ở Inventory (`stock_movements`).
 - `products.cost_price`: ban đầu nhập tay; Inventory cập nhật bình quân khi có nhập hàng (qua `CatalogService::setCostPrice($id, $cost)`).
 - Giá vốn (`products.cost_price`) chỉ gửi xuống và sửa được với quyền `inventory.cost` (không phải `products.update`); thiếu quyền thì form không có ô giá vốn, sửa sản phẩm giữ nguyên giá vốn cũ, thêm mới thì 0.
+- **Hoa hồng nhân viên của sản phẩm:** cùng ô "Định mức" như Dịch vụ (nút ₫ / % gắn liền ô nhập, ô Hoa hồng chỉ đọc cùng một dòng, tính ngay khi gõ; component `resources/js/Components/CommissionField.vue`). Cột `products.commission_type` (`amount` | `percent`, mặc định `amount`) và `commission_value` (mặc định 0); migration `..._200001`. Số tiền hoa hồng **không lưu**.
+  - Hoa hồng hiển thị trong form, chi tiết và danh sách **tính trên giá bán lẻ** (bảng giá mặc định). Quy tắc: `Core\Support\Commission::amount($type, $value, $price)` (₫ = đúng số tiền; % = % của giá; không vượt giá; làm tròn theo số lẻ tiền tệ).
+  - Kiểm tra: % tối đa 100 (2 chữ số thập phân); định mức tiền tối đa bằng giá bán lẻ ("Hoa hồng không được lớn hơn giá bán lẻ"). Không gửi định mức thì mặc định 0 (sửa sản phẩm bằng client cũ không làm mất định mức đã có).
+  - **Khi bán (Sales):** tính lại theo giá bán thực tế của từng dòng bằng `Commission::amount($p->commission_type, $p->commission_value, $unitPrice)` rồi nhân số lượng, lưu bản chụp vào dòng hóa đơn. Giá sỉ / giá khác vẫn dùng cùng định mức: % theo giá dòng đó; tiền cố định bị chặn ở giá dòng.
 - `CatalogService::lookupByCodes($keys)`: tra sản phẩm theo mã hoặc mã vạch (nhập Excel của Inventory).
 - `CatalogService::trackedProducts($search, $categoryId)`, `productBrief($id)`, `briefs($ids)`, `categoryOptions()`: dữ liệu dạng mảng cho trang Tồn kho, thẻ kho và phiếu kho của Inventory.
 - `CatalogService::stockProfile($id)`: mảng `id, track_stock, allow_decimal, cost_price, min_stock` cho Inventory (gồm cả sản phẩm xóa mềm); null nếu không có.

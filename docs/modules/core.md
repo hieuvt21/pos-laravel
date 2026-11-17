@@ -31,6 +31,7 @@ resources/css/{app.css,ui.css}
 ## API công khai (module khác được gọi)
 **Backend**
 - `Setting::read($key)`, `Setting::finance()`, `Setting::storeInfo()`, `Setting::branding()`.
+- `Commission::amount($type, $value, $price)` (`Support/Commission.php`): tính hoa hồng nhân viên từ định mức, dùng chung cho Dịch vụ và Sản phẩm (`amount`: đúng số tiền; `percent`: % của giá, tối đa 100; không vượt giá, làm tròn theo số lẻ tiền tệ). Ô nhập dùng chung: `resources/js/Components/CommissionField.vue`. Chú thích: `HelpTip.vue` (biểu tượng ? bấm để xem, dùng PrimeVue Popover) và `FieldLabel.vue` (nhãn ô nhập kèm ?, biểu tượng nằm ngoài thẻ `<label>`); thay cho các dòng `field-hint` dưới ô nhập.
 - `DocumentNumber::next('invoice'|'sale_return'|'purchase'|'stock_in'|'stock_out'|'stock_check'|'service'|'cash_in'|'cash_out'|'shift'|'product'|'customer'|'supplier')`. Thứ tự nhóm menu cố định trong `ModuleRegistry::GROUP_ORDER` (Tổng quan, Bán hàng, Khách hàng, Sản phẩm, Dịch vụ, Kho, Hàng hóa, Báo cáo, Hệ thống); nhóm không có trong danh sách (hoặc không khai `order`) xếp ở mức 80. Mục menu có thể khai `'badge' => [Class::class, 'method']`: hàm tĩnh nhận người dùng và trả số (hoặc null) hiện thành huy hiệu đỏ cạnh mục; lỗi khi tính thì bỏ huy hiệu, không làm hỏng menu.
 - `Money::round($n)`, `Money::format($n)`.
 - `CustomerTiers::for($spent)` (hạng + hạng kế tiếp), `discountFor($spent)`, `config()`, `enabled()`; setting `customer_tiers`.

@@ -6,7 +6,6 @@ import Checkbox from 'primevue/checkbox';
 import Column from 'primevue/column';
 import DataTable from 'primevue/datatable';
 import IconField from 'primevue/iconfield';
-import InputGroup from 'primevue/inputgroup';
 import InputIcon from 'primevue/inputicon';
 import InputNumber from 'primevue/inputnumber';
 import InputText from 'primevue/inputtext';
@@ -16,11 +15,13 @@ import Tag from 'primevue/tag';
 import Textarea from 'primevue/textarea';
 import { useConfirm } from 'primevue/useconfirm';
 import AppDialog from '@/Components/AppDialog.vue';
+import CommissionField from '@/Components/CommissionField.vue';
 import FieldStatus from '@/Components/FieldStatus.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { useMoney } from '@/composables/useMoney';
 import { usePermission } from '@/composables/usePermission';
 import { useUniqueCheck } from '@/composables/useUniqueCheck';
+import FieldLabel from '@/Components/FieldLabel.vue';
 import './services.css';
 
 const props = defineProps({
@@ -129,47 +130,16 @@ const formCategories = computed(() =>
     props.categories.filter((c) => c.is_active || c.id === form.service_category_id).map((c) => ({ value: c.id, label: c.is_active ? c.name : `${c.name} (ngừng sử dụng)` })),
 );
 
-const isPercent = computed(() => form.commission_type === 'percent');
-
-// Giá và định mức "đang gõ": PrimeVue chỉ cập nhật v-model khi rời ô, nên lấy giá trị ngay từ sự kiện input
-// để hoa hồng tính lại sau từng phím bấm.
+// Giá "đang gõ": PrimeVue chỉ cập nhật v-model khi rời ô, nên lấy giá trị ngay từ sự kiện input
+// để ô Hoa hồng tính lại sau từng phím bấm.
 const livePrice = ref(null);
-const liveQuota = ref(null);
 watch(() => form.price, (v) => (livePrice.value = v), { immediate: true });
-watch(() => form.commission_value, (v) => (liveQuota.value = v), { immediate: true });
 const onPriceInput = (e) => (livePrice.value = e.value);
-const onQuotaInput = (e) => (liveQuota.value = e.value);
 
-// Giới hạn ô định mức: % tối đa 100, tiền tối đa bằng giá dịch vụ
-const quotaMax = computed(() => (isPercent.value ? 100 : (livePrice.value ?? undefined)));
-
-// Hoa hồng tự tính: định mức tiền = đúng số đó; định mức % = % của giá. Không bao giờ vượt giá. Ô này không sửa được.
-const commissionAmount = computed(() => {
-    const price = Number(livePrice.value) || 0;
-    const value = Number(liveQuota.value) || 0;
-    const raw = isPercent.value ? (price * value) / 100 : value;
-    const factor = 10 ** fractionDigits.value;
-    return Math.round(Math.min(Math.max(raw, 0), price) * factor) / factor;
-});
-const commissionHint = computed(() => {
-    if (!isPercent.value) return 'Hoa hồng bằng đúng số tiền định mức.';
-    return `Hoa hồng = ${nf.format(Number(liveQuota.value) || 0)}% của giá ${money(Number(livePrice.value) || 0)}.`;
-});
-
-// Báo ngay khi định mức vượt giới hạn (server cũng kiểm tra lại khi lưu)
-const quotaOver = computed(() => {
-    const value = Number(liveQuota.value) || 0;
-    if (isPercent.value) return value > 100 ? 'Phần trăm hoa hồng không được vượt quá 100%.' : null;
-    return value > (Number(livePrice.value) || 0) ? 'Hoa hồng không được lớn hơn giá dịch vụ.' : null;
-});
-const quotaMessage = computed(() => form.errors.commission_value || quotaOver.value);
-
-// Chuyển ₫ / %: xóa số đã nhập để tránh hiểu nhầm giá trị cũ
-function setType(type) {
-    if (type === form.commission_type) return;
+// Định mức hoa hồng dùng ô chung CommissionField; vượt giới hạn thì khóa nút lưu
+const quotaOver = ref(null);
+function onTypeChange(type) {
     form.commission_type = type;
-    form.commission_value = null;
-    liveQuota.value = null;
     form.clearErrors('commission_value');
 }
 
@@ -322,7 +292,9 @@ function remove(s) {
                 </div>
 
                 <div class="field">
-                    <label for="sv-category">Danh mục <span class="app-req" aria-hidden="true">*</span></label>
+                    <FieldLabel for="sv-category">Danh mục <span class="app-req" aria-hidden="true">*</span>
+                        <template #help>Bắt buộc chọn một danh mục dịch vụ. Chưa có danh mục thì tạo ở menu Dịch vụ, mục Danh mục dịch vụ trước.</template>
+                    </FieldLabel>
                     <Select
                         v-model="form.service_category_id"
                         inputId="sv-category"
@@ -335,7 +307,6 @@ function remove(s) {
                         :invalid="!!form.errors.service_category_id"
                     />
                     <small v-if="form.errors.service_category_id" class="field-error">{{ form.errors.service_category_id }}</small>
-                    <small v-else-if="!formCategories.length" class="field-hint">Chưa có danh mục dịch vụ. Hãy tạo ở menu Dịch vụ, mục Danh mục dịch vụ trước.</small>
                 </div>
 
                 <div class="field">
@@ -356,51 +327,17 @@ function remove(s) {
                     <small v-if="form.errors.price" class="field-error">{{ form.errors.price }}</small>
                 </div>
 
-                <div class="sv-pair">
-                    <div class="field">
-                        <label for="sv-quota">Định mức hoa hồng</label>
-                        <InputGroup>
-                            <InputNumber
-                                v-model="form.commission_value"
-                                inputId="sv-quota"
-                                :min="0"
-                                :max="quotaMax"
-                                :minFractionDigits="0"
-                                :maxFractionDigits="isPercent ? 2 : fractionDigits"
-                                locale="vi-VN"
-                                placeholder="0"
-                                fluid
-                                :invalid="!!quotaMessage"
-                                @input="onQuotaInput"
-                            />
-                            <Button
-                                type="button"
-                                label="₫"
-                                aria-label="Định mức tính bằng tiền"
-                                :aria-pressed="!isPercent"
-                                :severity="isPercent ? 'secondary' : 'primary'"
-                                :outlined="isPercent"
-                                @click="setType('amount')"
-                            />
-                            <Button
-                                type="button"
-                                label="%"
-                                aria-label="Định mức tính theo phần trăm giá dịch vụ"
-                                :aria-pressed="isPercent"
-                                :severity="isPercent ? 'primary' : 'secondary'"
-                                :outlined="!isPercent"
-                                @click="setType('percent')"
-                            />
-                        </InputGroup>
-                    </div>
-
-                    <div class="field">
-                        <label for="sv-commission">Hoa hồng</label>
-                        <InputText id="sv-commission" class="sv-readonly" :modelValue="money(commissionAmount)" readonly aria-readonly="true" fluid />
-                    </div>
-                </div>
-                <small v-if="quotaMessage" class="field-error sv-pair-note" role="alert">{{ quotaMessage }}</small>
-                <small v-else class="field-hint sv-pair-note">Chọn ₫ để nhập số tiền cố định, chọn % để tính theo giá dịch vụ (tối đa 100%). Hoa hồng tự tính, không sửa được. {{ commissionHint }}</small>
+                <CommissionField
+                    :type="form.commission_type"
+                    :value="form.commission_value"
+                    :price="livePrice"
+                    priceLabel="giá dịch vụ"
+                    :error="form.errors.commission_value"
+                    inputId="sv-quota"
+                    @update:type="onTypeChange"
+                    @update:value="(v) => (form.commission_value = v)"
+                    @problem="(m) => (quotaOver = m)"
+                />
 
                 <div class="field">
                     <label for="sv-note">Ghi chú</label>

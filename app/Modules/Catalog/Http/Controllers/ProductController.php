@@ -7,6 +7,7 @@ use App\Modules\Catalog\Models\Category;
 use App\Modules\Catalog\Models\PriceList;
 use App\Modules\Catalog\Models\Product;
 use App\Modules\Catalog\Models\Unit;
+use App\Modules\Core\Support\Commission;
 use App\Modules\Core\Support\DocumentNumber;
 use App\Modules\Core\Support\UniqueName;
 use Illuminate\Http\JsonResponse;
@@ -31,6 +32,8 @@ class ProductController extends Controller
         $status = in_array($request->query('status'), ['active', 'inactive'], true) ? $request->query('status') : null;
 
         $canSeeCost = (bool) $request->user()?->can('inventory.cost'); // giá vốn chỉ gửi và sửa được với quyền xem giá vốn của kho
+
+        $retailListId = (int) PriceList::where('is_default', true)->value('id');
 
         $products = Product::with(['category:id,name', 'unit:id,name,allow_decimal', 'prices'])
             ->search($search)
@@ -58,6 +61,10 @@ class ProductController extends Controller
                 'qty_pricing' => $p->qty_pricing,
                 'track_stock' => $p->track_stock,
                 'min_stock' => $p->min_stock,
+                'commission_type' => $p->commission_type,
+                'commission_value' => $p->commission_value,
+                // hoa hồng tính trên giá bán lẻ (bảng giá mặc định), chỉ để hiển thị; khi bán sẽ tính trên giá bán thực tế
+                'commission' => Commission::amount($p->commission_type, $p->commission_value, (float) ($p->prices->firstWhere('price_list_id', $retailListId)?->price ?? 0)),
                 'cost_price' => $canSeeCost ? $p->cost_price : null,
                 'stock' => null, // Inventory sẽ cấp số tồn thật; chưa có thì hiện 0 với sản phẩm quản lý tồn
                 'prices' => $p->prices->map(fn ($pr) => [
@@ -193,6 +200,8 @@ class ProductController extends Controller
             'min_stock' => ['nullable', 'numeric', 'min:0', 'max:999999999', 'decimal:0,3'],
             'cost_price' => ['nullable', 'numeric', 'min:0', 'max:9999999999'],
             'qty_pricing' => ['nullable', 'boolean'],
+            'commission_type' => ['nullable', Rule::in(Commission::TYPES)],
+            'commission_value' => ['nullable', 'numeric', 'min:0', 'max:9999999999', 'decimal:0,2'],
 
             'prices' => ['required', 'array', 'max:20'],
             'prices.*.price_list_id' => ['required', 'distinct', Rule::exists('price_lists', 'id')],
@@ -220,6 +229,11 @@ class ProductController extends Controller
             'min_stock.decimal' => 'Tồn tối thiểu tối đa 3 chữ số thập phân.',
             'cost_price.numeric' => 'Giá vốn phải là số.',
             'cost_price.min' => 'Giá vốn không được âm.',
+            'commission_type.in' => 'Đơn vị định mức không hợp lệ.',
+            'commission_value.numeric' => 'Định mức phải là số.',
+            'commission_value.min' => 'Định mức không được âm.',
+            'commission_value.max' => 'Định mức quá lớn.',
+            'commission_value.decimal' => 'Định mức tối đa 2 chữ số thập phân.',
             'prices.*.price.numeric' => 'Giá phải là số.',
             'prices.*.price.min' => 'Giá không được âm.',
             'prices.*.min_qty.numeric' => 'Số lượng phải là số.',
@@ -266,6 +280,26 @@ class ProductController extends Controller
                 }
             }
 
+            // Hoa hồng không được vượt giá bán: định mức % tối đa 100, định mức tiền tối đa bằng giá bán lẻ
+            $quota = $request->input('commission_value');
+            if (is_numeric($quota) && (float) $quota > 0 && ! $v->errors()->has('commission_value') && ! $v->errors()->has('commission_type')) {
+                if ($request->input('commission_type') === Commission::PERCENT) {
+                    if ((float) $quota > 100) {
+                        $v->errors()->add('commission_value', 'Phần trăm hoa hồng không được vượt quá 100%.');
+                    }
+                } else {
+                    $retail = 0.0;
+                    foreach ($prices as $row) {
+                        if ((int) ($row['price_list_id'] ?? 0) === $defaultId && is_numeric($row['price'] ?? null)) {
+                            $retail = (float) $row['price'];
+                        }
+                    }
+                    if ((float) $quota > $retail) {
+                        $v->errors()->add('commission_value', 'Hoa hồng không được lớn hơn giá bán lẻ.');
+                    }
+                }
+            }
+
             if ($qtyPricing && ! $hasTier && ! $v->errors()->has('prices')) {
                 $v->errors()->add('qty_pricing', 'Hãy nhập số lượng cho ít nhất một bảng giá, hoặc tắt "Tự động chuyển giá theo số lượng".');
             }
@@ -292,6 +326,10 @@ class ProductController extends Controller
             // Số tồn thật nằm ở sổ kho (stock_movements), tồn đầu kỳ nhập bằng phiếu nhập kho.
             'track_stock' => (bool) ($data['track_stock'] ?? false),
             'min_stock' => $data['min_stock'] ?? 0, // ngưỡng cảnh báo sắp hết (Inventory đọc)
+            ...(array_key_exists('commission_type', $data) || array_key_exists('commission_value', $data) ? [
+                'commission_type' => $data['commission_type'] ?? Commission::AMOUNT,
+                'commission_value' => $data['commission_value'] ?? 0,
+            ] : []),
             'description' => $data['description'] ?? null,
             'is_active' => (bool) $data['is_active'],
         ];

@@ -18,6 +18,8 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import ImageInput from '@/Components/ImageInput.vue';
 import { DEFAULT_FINANCE, formatMoney, roundMoney } from '@/utils/money';
 import { DATE_FORMATS, SEPARATORS, composeNumber } from '@/utils/numbering';
+import FieldLabel from '@/Components/FieldLabel.vue';
+import HelpTip from '@/Components/HelpTip.vue';
 
 const props = defineProps({
     store: { type: Object, required: true },
@@ -174,10 +176,11 @@ const saveNumbering = () => numberingForm.put(route('store.numbering'), saveOpti
                                     :error="infoForm.errors.store_logo_file"
                                 />
                                 <div class="field">
-                                    <label for="st-name">Tên cửa hàng <span class="app-req" aria-hidden="true">*</span></label>
+                                    <FieldLabel for="st-name">Tên cửa hàng <span class="app-req" aria-hidden="true">*</span>
+                                        <template #help>Tên đầy đủ in trên hóa đơn.</template>
+                                    </FieldLabel>
                                     <InputText id="st-name" v-model="infoForm.name" maxlength="100" autocomplete="off" autofocus fluid :invalid="!!infoForm.errors.name" />
                                     <small v-if="infoForm.errors.name" class="field-error">{{ infoForm.errors.name }}</small>
-                                    <small v-else class="field-hint">Tên đầy đủ in trên hóa đơn.</small>
                                 </div>
                             </div>
 
@@ -207,10 +210,11 @@ const saveNumbering = () => numberingForm.put(route('store.numbering'), saveOpti
                                     <small v-if="infoForm.errors.owner" class="field-error">{{ infoForm.errors.owner }}</small>
                                 </div>
                                 <div class="field">
-                                    <label for="st-tax">Mã số thuế</label>
+                                    <FieldLabel for="st-tax">Mã số thuế
+                                        <template #help>10 hoặc 13 số. Bỏ trống nếu không có.</template>
+                                    </FieldLabel>
                                     <InputText id="st-tax" v-model="infoForm.tax_code" inputmode="numeric" autocomplete="off" fluid :invalid="!!infoForm.errors.tax_code" />
                                     <small v-if="infoForm.errors.tax_code" class="field-error">{{ infoForm.errors.tax_code }}</small>
-                                    <small v-else class="field-hint">10 hoặc 13 số. Bỏ trống nếu không có.</small>
                                 </div>
                             </div>
 
@@ -289,10 +293,8 @@ const saveNumbering = () => numberingForm.put(route('store.numbering'), saveOpti
                             <div class="st-switch-row">
                                 <ToggleSwitch v-model="financeForm.tax_enabled" inputId="fi-tax" />
                                 <label for="fi-tax">Tính và hiển thị VAT trên hóa đơn</label>
+                                <HelpTip>Nếu cửa hàng không xuất hóa đơn VAT thì để tắt. Mức thuế áp dụng thực tế bạn nên hỏi kế toán hoặc cơ quan thuế.</HelpTip>
                             </div>
-                            <p class="field-hint" style="margin: 0.4rem 0 0.9rem">
-                                Nếu cửa hàng không xuất hóa đơn VAT thì để tắt. Mức thuế áp dụng thực tế bạn nên hỏi kế toán hoặc cơ quan thuế.
-                            </p>
 
                             <template v-if="financeForm.tax_enabled">
                                 <div class="field">

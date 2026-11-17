@@ -9,6 +9,8 @@ import BrandMark from '@/Components/BrandMark.vue';
 import { applyTheme, isTooLight, useBranding } from '@/composables/useBranding';
 import { usePermission } from '@/composables/usePermission';
 import { useUiSettings } from '@/composables/useUiSettings';
+import FieldLabel from '@/Components/FieldLabel.vue';
+import HelpTip from '@/Components/HelpTip.vue';
 
 defineProps({
     themes: { type: Array, default: () => [] },
@@ -142,17 +144,20 @@ onBeforeUnmount(revokePreview);
 
                     <fieldset class="ap-fieldset" :disabled="!canEdit">
                         <div class="field">
-                            <label for="shop-name">Tên hiển thị <span class="app-req" aria-hidden="true">*</span></label>
+                            <FieldLabel for="shop-name">Tên hiển thị <span class="app-req" aria-hidden="true">*</span>
+                                <template #help>
+                                    Hiện trên thanh bên và tab trình duyệt, tối đa {{ shopNameMax }} ký tự ({{ form.shop_name.length }}/{{ shopNameMax }}). Tên đầy đủ in hóa đơn nhập ở trang Cửa hàng.
+                                </template>
+                            </FieldLabel>
                             <div class="ap-name-row">
                                 <BrandMark :logo="logoPreview" :name="form.shop_name" large />
                                 <InputText id="shop-name" v-model="form.shop_name" :maxlength="shopNameMax" autocomplete="off" fluid :invalid="!!form.errors.shop_name" />
                             </div>
                             <small v-if="form.errors.shop_name" class="field-error">{{ form.errors.shop_name }}</small>
-                            <small v-else class="field-hint">Hiện trên thanh bên và tab trình duyệt, tối đa {{ shopNameMax }} ký tự ({{ form.shop_name.length }}/{{ shopNameMax }}). Tên đầy đủ in hóa đơn nhập ở trang Cửa hàng.</small>
                         </div>
 
                         <div class="set-block">
-                            <h3 class="set-title">Logo</h3>
+                            <h3 class="set-title">Logo <HelpTip>JPG, PNG hoặc WebP, tối đa 1 MB. Nên dùng ảnh vuông.</HelpTip></h3>
                             <div class="icon-grid" role="group" aria-label="Biểu tượng logo có sẵn">
                                 <button
                                     v-for="key in icons"
@@ -179,7 +184,6 @@ onBeforeUnmount(revokePreview);
                                     outlined
                                     @click="fileInput.click()"
                                 />
-                                <small class="field-hint">JPG, PNG hoặc WebP, tối đa 1 MB. Nên dùng ảnh vuông.</small>
                                 <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/webp" hidden @change="pickFile" />
                             </div>
                             <small v-if="fileError || form.errors.logo_file" class="field-error" role="alert">
@@ -188,7 +192,7 @@ onBeforeUnmount(revokePreview);
                         </div>
 
                         <div class="set-block">
-                            <h3 class="set-title">Màu chủ đề</h3>
+                            <h3 class="set-title">Màu chủ đề <HelpTip>Màu này dùng cho nút bấm và điểm nhấn, các sắc nhạt/đậm được tạo tự động.</HelpTip></h3>
                             <div class="theme-grid" role="group" aria-label="Màu chủ đề">
                                 <button
                                     v-for="t in themes"
@@ -240,7 +244,6 @@ onBeforeUnmount(revokePreview);
                                 />
                                 <small v-if="form.errors.theme_custom" class="field-error">{{ form.errors.theme_custom }}</small>
                                 <small v-else-if="customTooLight" class="field-hint">Màu hơi sáng: chữ trắng trên nút bấm có thể khó đọc, nên chọn màu đậm hơn.</small>
-                                <small v-else class="field-hint">Màu này dùng cho nút bấm và điểm nhấn, các sắc nhạt/đậm được tạo tự động.</small>
                             </div>
                         </div>
 
@@ -258,7 +261,10 @@ onBeforeUnmount(revokePreview);
                 </div>
                 <div class="ap-body">
                     <div class="set-block">
-                        <h3 class="set-title">Thanh bên</h3>
+                        <h3 class="set-title">
+                            Thanh bên
+                            <HelpTip><strong>Cố định:</strong> luôn mở rộng.<br /><strong>Tự động:</strong> thu gọn thành cột biểu tượng, mở ra khi rê chuột vào.</HelpTip>
+                        </h3>
                         <SelectButton
                             v-model="settings.sidebarMode"
                             :options="modes"
@@ -267,10 +273,6 @@ onBeforeUnmount(revokePreview);
                             :allowEmpty="false"
                             aria-label="Chế độ thanh bên"
                         />
-                        <p class="field-hint" style="margin-top: 0.6rem">
-                            <strong>Cố định:</strong> luôn mở rộng.<br />
-                            <strong>Tự động:</strong> thu gọn thành cột biểu tượng, mở ra khi rê chuột vào.
-                        </p>
                     </div>
 
                     <div class="set-block">

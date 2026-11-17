@@ -1,7 +1,7 @@
 <?php
 
 use App\Modules\Core\Models\Setting;
-use App\Modules\ServiceCatalog\Support\Commission;
+use App\Modules\Core\Support\Commission;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

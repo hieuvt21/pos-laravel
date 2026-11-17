@@ -5,6 +5,7 @@ import Button from 'primevue/button';
 import Password from 'primevue/password';
 import BrandMark from '@/Components/BrandMark.vue';
 import { useBranding } from '@/composables/useBranding';
+import FieldLabel from '@/Components/FieldLabel.vue';
 
 // Trang bắt buộc đổi mật khẩu ở lần đăng nhập đầu (hoặc sau khi quản trị viên đặt lại).
 const { branding } = useBranding();
@@ -43,7 +44,9 @@ const logout = () => router.post(route('logout'));
 
             <form novalidate @submit.prevent="submit">
                 <div class="field">
-                    <label for="fc-new">Mật khẩu mới <span class="app-req" aria-hidden="true">*</span></label>
+                    <FieldLabel for="fc-new">Mật khẩu mới <span class="app-req" aria-hidden="true">*</span>
+                        <template #help>Tối thiểu 6 ký tự, khác mật khẩu được cấp.</template>
+                    </FieldLabel>
                     <Password
                         ref="newRef"
                         v-model="form.password"
@@ -56,7 +59,6 @@ const logout = () => router.post(route('logout'));
                         :invalid="!!form.errors.password"
                     />
                     <small v-if="form.errors.password" class="field-error" role="alert">{{ form.errors.password }}</small>
-                    <small v-else class="field-hint">Tối thiểu 6 ký tự, khác mật khẩu được cấp.</small>
                 </div>
 
                 <div class="field">

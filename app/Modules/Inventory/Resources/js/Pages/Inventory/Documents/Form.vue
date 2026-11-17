@@ -9,6 +9,7 @@ import Tag from 'primevue/tag';
 import Textarea from 'primevue/textarea';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { useMoney } from '@/composables/useMoney';
+import FieldLabel from '@/Components/FieldLabel.vue';
 import '../inventory.css';
 
 // Dùng chung cho phiếu nhập kho (kind = receipt) và phiếu xuất kho (kind = issue).
@@ -152,7 +153,9 @@ function submit() {
                     <small v-if="form.errors.reason" class="field-error">{{ form.errors.reason }}</small>
                 </div>
                 <div v-if="isReceipt" class="field">
-                    <label for="d-supplier">Nhà cung cấp</label>
+                    <FieldLabel for="d-supplier">Nhà cung cấp
+                        <template #help>Không bắt buộc. Chọn nhà cung cấp để biết hàng nhập từ đâu. Chưa có nhà cung cấp thì thêm ở menu Kho, mục Nhà cung cấp.</template>
+                    </FieldLabel>
                     <Select
                         v-model="form.supplier_id"
                         inputId="d-supplier"
@@ -166,7 +169,6 @@ function submit() {
                         :invalid="!!form.errors.supplier_id"
                     />
                     <small v-if="form.errors.supplier_id" class="field-error">{{ form.errors.supplier_id }}</small>
-                    <small v-else-if="!suppliers.length" class="field-hint">Chưa có nhà cung cấp. Thêm ở menu Kho, mục Nhà cung cấp.</small>
                 </div>
                 <div class="field iv-meta-note">
                     <label for="d-note">Ghi chú</label>

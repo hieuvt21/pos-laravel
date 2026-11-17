@@ -40,6 +40,14 @@ const cost = computed(() => (props.product?.cost_price ? Number(props.product.co
 const profit = computed(() => (cost.value !== null && retail.value ? retail.value - cost.value : null));
 const margin = computed(() => (profit.value !== null && retail.value ? Math.round((profit.value / retail.value) * 1000) / 10 : null));
 
+// Hoa hồng nhân viên: định mức (₫ hoặc %) và số tiền tính trên giá bán lẻ; ẩn khi không có hoa hồng
+const hasCommission = computed(() => Number(props.product?.commission_value) > 0);
+const quotaText = computed(() => {
+    const p = props.product;
+    if (!p) return '';
+    return p.commission_type === 'percent' ? `${Number(p.commission_value).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}%` : money(Number(p.commission_value));
+});
+
 const stockText = computed(() => (props.product?.track_stock ? Number(props.product.stock ?? 0).toLocaleString('vi-VN') : '-'));
 
 function copyBarcode() {
@@ -90,6 +98,11 @@ function copyBarcode() {
             <div v-if="canEdit && cost !== null" class="pd-cost">
                 <span>Giá vốn</span><strong>{{ money(cost) }}</strong>
                 <template v-if="profit !== null"><span>Lãi mỗi {{ product.unit || 'đơn vị' }}</span><strong>{{ money(profit) }}</strong></template>
+            </div>
+
+            <div v-if="hasCommission" class="pd-cost">
+                <span>Định mức hoa hồng</span><strong>{{ quotaText }}</strong>
+                <span>Hoa hồng (trên giá bán lẻ)</span><strong>{{ money(Number(product.commission)) }}</strong>
             </div>
 
             <dl class="pd-info">

@@ -7,6 +7,7 @@ import AvatarPicker from '@/Components/AvatarPicker.vue';
 import FieldStatus from '@/Components/FieldStatus.vue';
 import PhoneInput from '@/Components/PhoneInput.vue';
 import { useUniqueCheck } from '@/composables/useUniqueCheck';
+import FieldLabel from '@/Components/FieldLabel.vue';
 
 const props = defineProps({
     profile: { type: Object, required: true },
@@ -68,16 +69,19 @@ function submit() {
         </div>
 
         <div class="field">
-            <label for="pf-username">Tên đăng nhập <span class="app-req" aria-hidden="true">*</span></label>
+            <FieldLabel for="pf-username">Tên đăng nhập <span class="app-req" aria-hidden="true">*</span>
+                <template #help>Tên đăng nhập do quản trị viên đặt, bạn không tự đổi được.</template>
+            </FieldLabel>
             <div id="pf-username" class="pf-readonly">
                 <i class="pi pi-lock" aria-hidden="true" />
                 <span>{{ profile.username }}</span>
             </div>
-            <small class="field-hint">Tên đăng nhập do quản trị viên đặt, bạn không tự đổi được.</small>
         </div>
 
         <div class="field">
-            <label for="pf-phone">Số điện thoại</label>
+            <FieldLabel for="pf-phone">Số điện thoại
+                <template #help>Gồm 10 số. Có thể dùng để đăng nhập.</template>
+            </FieldLabel>
             <PhoneInput
                 id="pf-phone"
                 v-model="form.phone"
@@ -86,9 +90,6 @@ function submit() {
             />
             <small v-if="form.errors.phone" class="field-error">{{ form.errors.phone }}</small>
             <FieldStatus v-else :status="phoneCheck.status" :message="phoneCheck.message" />
-            <small v-if="!form.errors.phone && phoneCheck.status === 'idle'" class="field-hint">
-                Gồm 10 số. Có thể dùng để đăng nhập.
-            </small>
         </div>
 
         <div class="field">

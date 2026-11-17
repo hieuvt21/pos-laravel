@@ -2,7 +2,7 @@
 
 namespace App\Modules\ServiceCatalog\Models;
 
-use App\Modules\ServiceCatalog\Support\Commission;
+use App\Modules\Core\Support\Commission;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;

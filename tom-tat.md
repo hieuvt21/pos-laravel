@@ -65,7 +65,8 @@ Dùng chung (không thuộc module nào): `resources/js/{Layouts,Components,comp
 - Layout: `Layouts/AppLayout.vue`, dùng `<AppLayout title="...">` trong từng trang (menu lấy từ `page.props.navigation`).
 - CSS riêng `ui.css`, tiền tố class và biến **`app-`** (`.app-panel`, `--app-glass`); `.glass` là thẻ kính mờ. Màu chủ đạo do cài đặt Giao diện của cửa hàng quyết định (biến `--p-primary-*`, xem `useBranding`).
 - Trang theo mẫu `Users/Index.vue`: `<Head>` + `<AppLayout>`, panel `app-panel app-fill`, `DataTable`, thêm/sửa trong `AppDialog`, `useForm`, xoá bằng `useConfirm`.
-- Component dùng chung: `AppDialog` (dùng thay `Dialog`), `FieldStatus`, `PhoneInput`, `ImageInput`, `AvatarPicker`, `UserAvatar`, `BrandMark`. Toast và ConfirmDialog đã có sẵn trong layout.
+- Component dùng chung: `AppDialog` (dùng thay `Dialog`), `FieldStatus`, `PhoneInput`, `ImageInput`, `AvatarPicker`, `UserAvatar`, `BrandMark`, `CommissionField` (ô định mức hoa hồng), `HelpTip` và `FieldLabel` (chú thích). Toast và ConfirmDialog đã có sẵn trong layout.
+- **Chú thích ẩn sau biểu tượng ?:** mọi lời giải thích (hướng dẫn nhập, ý nghĩa tùy chọn) dùng `HelpTip` (bấm biểu tượng ? thì hiện khung nội dung, bấm ra ngoài hoặc Esc để đóng); với ô nhập dùng `<FieldLabel for="id">Tên<template #help>Nội dung</template></FieldLabel>` (biểu tượng nằm ngoài thẻ `<label>`). **Không** viết thêm dòng `field-hint` dưới ô nhập. Vẫn để hiện sẵn: lỗi, cảnh báo cần thấy ngay (ví dụ "Màu hơi sáng"), trạng thái (Đang tải, Mặc định) và dữ liệu phụ.
 - Cờ giao diện cá nhân (thanh bên ghim/tự thu, ảnh nền) lưu localStorage (`pos.ui`).
 - **Trường bắt buộc:** dấu sao đỏ ngay sau nhãn: `<span class="app-req" aria-hidden="true">*</span>`. Trường tùy chọn thì KHÔNG ghi "không bắt buộc".
 - **Tự viết hoa chữ cái đầu** ở mọi ô nhập chữ (`utils/autoCapitalize.js`, cài ở `app.js`). Tên người (khách, người dùng, chủ cửa hàng) thêm `data-cap="words"` để viết hoa đầu mỗi từ. Ô mã/mã vạch/tên đăng nhập/email/số/mật khẩu/tìm kiếm tự được bỏ qua; ô khác muốn tắt thì thêm `data-nocap`. Ô mới phải đặt `id` không chứa `code|barcode|username|login|email|phone|tax|hex` nếu là ô mã.
@@ -144,8 +145,14 @@ Purchasing -> Inventory | Sales -> Catalog, Inventory, Customers | Reports chỉ
 | 17 | Dịch vụ là module riêng `ServiceCatalog`, làm đơn giản: giá cố định, không đơn vị, không tồn kho, không thuế riêng, không Excel | Cửa hàng vừa bán sản phẩm vừa cung cấp dịch vụ; Bán hàng sau này bán chung một hóa đơn |
 | 18 | Hoa hồng dịch vụ khai báo bằng một ô "định mức" (₫ hoặc %); số tiền hoa hồng không lưu mà tính từ giá và định mức; % tối đa 100, định mức tiền tối đa bằng giá | Đổi giá thì hoa hồng tự theo; hoa hồng không thể vượt giá dịch vụ |
 | 19 | Dịch vụ bắt buộc thuộc một danh mục dịch vụ đang sử dụng | Báo cáo và Bán hàng sau này nhóm theo danh mục; tránh dịch vụ "không phân loại" |
+| 20 | Sản phẩm cũng có hoa hồng nhân viên bằng ô "định mức" (₫ hoặc %) như Dịch vụ; hoa hồng hiển thị tính trên giá bán lẻ, khi bán tính lại theo giá bán thực tế | Sản phẩm có nhiều bảng giá nên cần một giá chuẩn để hiển thị; số tiền không lưu |
+| 21 | Tính hoa hồng dùng chung: `Core\Support\Commission` (PHP) và `Components/CommissionField.vue` (giao diện) | Catalog không phụ thuộc module Dịch vụ; một quy tắc duy nhất cho cả hai |
 
 ## 10. Việc đang làm / bước tiếp theo
+
+- Vừa xong (chờ chạy thử): chú thích gom vào biểu tượng ? (`HelpTip`, `FieldLabel`) ở mọi form: sản phẩm, hoa hồng, tồn kho, cài đặt kho, giao diện, cửa hàng, hạng thành viên, khách hàng, người dùng, vai trò, hồ sơ, đổi mật khẩu, avatar, nhà cung cấp, danh mục dịch vụ. Form sản phẩm: mục Thuế (bỏ tiêu đề "Thuế") dời xuống dưới "Tự động chuyển giá theo số lượng" trong khối Giá bán.
+
+- Vừa xong (chờ chạy thử): hoa hồng cho Sản phẩm: migration `..._200001` (`products.commission_type`, `commission_value`), mục "Hoa hồng nhân viên" trong form sản phẩm (ô định mức ₫/% + ô hoa hồng cùng dòng, tính ngay khi gõ), hoa hồng ở chi tiết sản phẩm và danh sách (tính trên giá bán lẻ), kiểm tra % ≤ 100 và tiền ≤ giá bán lẻ. Chuyển `Commission` sang Core, tách ô nhập thành `CommissionField.vue` dùng chung (Dịch vụ cũng dùng). Test mới `ProductCommissionTest`; `CommissionTest` chuyển sang `tests/Feature/Core`.
 
 - Vừa xong (chờ chạy thử): chỉnh Dịch vụ: bắt buộc chọn danh mục; nút ₫/% gắn liền ô định mức, Định mức và Hoa hồng cùng một dòng, hoa hồng tính lại ngay khi gõ (`@input`); thanh cuộn của menu bên trái mảnh (5px), ẩn hẳn và CHỈ hiện khi rê chuột vào vùng menu (`.app-nav` trong `ui.css`, Chrome/Edge/Safari dùng `::-webkit-scrollbar`, Firefox dùng `scrollbar-color`). Không dùng `:focus-within` vì sau khi bấm một mục menu, mục đó giữ focus làm thanh cuộn hiện mãi.
 

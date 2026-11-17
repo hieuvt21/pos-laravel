@@ -2,6 +2,7 @@
 import Drawer from 'primevue/drawer';
 import SelectButton from 'primevue/selectbutton';
 import { useUiSettings } from '@/composables/useUiSettings';
+import HelpTip from '@/Components/HelpTip.vue';
 
 defineProps({ visible: { type: Boolean, default: false } });
 defineEmits(['update:visible']);
@@ -23,7 +24,10 @@ const modes = [
         @update:visible="$emit('update:visible', $event)"
     >
         <section class="set-block">
-            <h3 class="set-title">Thanh bên</h3>
+            <h3 class="set-title">
+                Thanh bên
+                <HelpTip><strong>Cố định:</strong> luôn mở rộng.<br /><strong>Tự động:</strong> thu gọn thành cột biểu tượng, mở ra khi rê chuột vào.</HelpTip>
+            </h3>
             <SelectButton
                 v-model="settings.sidebarMode"
                 :options="modes"
@@ -32,10 +36,6 @@ const modes = [
                 :allowEmpty="false"
                 aria-label="Chế độ thanh bên"
             />
-            <p class="field-hint" style="margin-top: 0.6rem">
-                <strong>Cố định:</strong> luôn mở rộng.<br />
-                <strong>Tự động:</strong> thu gọn thành cột biểu tượng, mở ra khi rê chuột vào.
-            </p>
         </section>
 
         <section class="set-block">

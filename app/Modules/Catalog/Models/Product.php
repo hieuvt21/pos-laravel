@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['code', 'name', 'barcode', 'category_id', 'unit_id', 'tax_rate', 'qty_pricing', 'cost_price', 'track_stock', 'min_stock', 'image', 'description', 'is_active'])]
+#[Fillable(['code', 'name', 'barcode', 'category_id', 'unit_id', 'tax_rate', 'qty_pricing', 'cost_price', 'track_stock', 'min_stock', 'commission_type', 'commission_value', 'image', 'description', 'is_active'])]
 class Product extends Model
 {
     use SoftDeletes;
@@ -37,6 +37,7 @@ class Product extends Model
             'tax_rate' => 'float',
             'cost_price' => 'float',
             'min_stock' => 'float',
+            'commission_value' => 'float',
         ];
     }
 

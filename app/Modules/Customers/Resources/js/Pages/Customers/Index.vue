@@ -31,6 +31,8 @@ import { useUniqueCheck } from '@/composables/useUniqueCheck';
 import { formatPhone } from '@/utils/phone';
 import CustomerDetail from './Partials/CustomerDetail.vue';
 import ImportDialog from './Partials/ImportDialog.vue';
+import FieldLabel from '@/Components/FieldLabel.vue';
+import HelpTip from '@/Components/HelpTip.vue';
 
 const props = defineProps({
     customers: { type: Object, required: true },
@@ -683,7 +685,10 @@ function openDetail(c) {
                 <small v-if="form.errors.avatar_file" class="field-error" style="display: block; margin: -0.5rem 0 1rem">{{ form.errors.avatar_file }}</small>
 
                 <div class="field">
-                    <span class="cu-gender-label" id="c-gender-l">Giới tính</span>
+                    <div class="field-label">
+                        <span class="cu-gender-label" id="c-gender-l">Giới tính</span>
+                        <HelpTip>Chọn giới tính để tự gán ảnh đại diện nam/nữ, vẫn đổi được ảnh khác.</HelpTip>
+                    </div>
                     <div class="cu-gender" role="group" aria-labelledby="c-gender-l">
                         <button
                             v-for="g in GENDER_OPTIONS"
@@ -697,7 +702,6 @@ function openDetail(c) {
                             <i :class="['pi', g.icon]" aria-hidden="true" /> {{ g.label }}
                         </button>
                     </div>
-                    <small class="field-hint">Chọn giới tính để tự gán ảnh đại diện nam/nữ, vẫn đổi được ảnh khác.</small>
                 </div>
 
                 <div class="field">
@@ -707,7 +711,9 @@ function openDetail(c) {
                 </div>
 
                 <div class="field">
-                    <label for="c-phone">Số điện thoại</label>
+                    <FieldLabel for="c-phone">Số điện thoại
+                        <template #help>Gồm 10 số.</template>
+                    </FieldLabel>
                     <PhoneInput
                         id="c-phone"
                         v-model="form.phone"
@@ -716,7 +722,6 @@ function openDetail(c) {
                     />
                     <small v-if="form.errors.phone" class="field-error">{{ form.errors.phone }}</small>
                     <FieldStatus v-else :status="phoneCheck.status" :message="phoneCheck.message" />
-                    <small v-if="!form.errors.phone && phoneCheck.status === 'idle'" class="field-hint">Gồm 10 số.</small>
                 </div>
 
                 <div class="field">
@@ -768,13 +773,14 @@ function openDetail(c) {
                 </div>
 
                 <div v-if="editing" class="field">
-                    <label for="c-spent">Chi tiêu</label>
+                    <FieldLabel for="c-spent">Chi tiêu
+                        <template #help>Tự cộng dồn từ các đơn hàng đã thanh toán, không sửa tay.</template>
+                    </FieldLabel>
                     <div id="c-spent" class="pf-readonly">
                         <i class="pi pi-wallet" aria-hidden="true" />
                         <span>{{ money(editing.total_spent) }}</span>
                         <TierBadge :tier="editing.tier" />
                     </div>
-                    <small class="field-hint">Tự cộng dồn từ các đơn hàng đã thanh toán, không sửa tay.</small>
                 </div>
 
                 <div class="dialog-actions">

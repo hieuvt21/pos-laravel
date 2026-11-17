@@ -17,6 +17,7 @@ import Tag from 'primevue/tag';
 import Textarea from 'primevue/textarea';
 import { useConfirm } from 'primevue/useconfirm';
 import AppDialog from '@/Components/AppDialog.vue';
+import CommissionField from '@/Components/CommissionField.vue';
 import FieldStatus from '@/Components/FieldStatus.vue';
 import ProductDetail from './Partials/ProductDetail.vue';
 import ImageInput from '@/Components/ImageInput.vue';
@@ -24,6 +25,8 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import { usePermission } from '@/composables/usePermission';
 import { useMoney } from '@/composables/useMoney';
 import { useUniqueCheck } from '@/composables/useUniqueCheck';
+import FieldLabel from '@/Components/FieldLabel.vue';
+import HelpTip from '@/Components/HelpTip.vue';
 
 const props = defineProps({
     products: { type: Object, required: true },
@@ -154,6 +157,8 @@ const form = useForm({
     track_stock: false,
     min_stock: null,
     cost_price: null,
+    commission_type: 'amount', // định mức hoa hồng: amount (số tiền) hoặc percent (% giá bán)
+    commission_value: null,
 });
 
 // Thuế khai báo riêng cho từng sản phẩm, mặc định tắt (độc lập với công tắc thuế chung ở trang Cửa hàng)
@@ -171,6 +176,19 @@ watch(
     },
 );
 const defaultList = computed(() => props.priceLists.find((l) => l.is_default));
+
+// Giá bán lẻ "đang gõ": PrimeVue chỉ cập nhật v-model khi rời ô, nên lấy giá trị ngay từ sự kiện input
+// để ô Hoa hồng tính lại sau từng phím bấm. Hoa hồng của sản phẩm tính trên giá bán lẻ (bảng giá mặc định).
+const liveRetail = ref(null);
+watch(() => form.retail_price, (v) => (liveRetail.value = v), { immediate: true });
+const onRetailInput = (e) => (liveRetail.value = e.value);
+
+// Định mức hoa hồng dùng ô chung CommissionField; vượt giới hạn thì khóa nút lưu
+const commissionProblem = ref(null);
+function onCommissionType(type) {
+    form.commission_type = type;
+    form.clearErrors('commission_value');
+}
 const tierLists = computed(() => props.priceLists.filter((l) => l.is_active && !l.is_default));
 const categoryOptions = computed(() => props.categories.filter((c) => c.is_active || c.id === form.category_id));
 const unitOptions = computed(() => props.units.filter((u) => u.is_active || u.id === form.unit_id));
@@ -246,6 +264,8 @@ function openEdit(p) {
     form.track_stock = p.track_stock;
     form.min_stock = p.min_stock ? Number(p.min_stock) : null;
     form.cost_price = p.cost_price ? Number(p.cost_price) : null;
+    form.commission_type = p.commission_type ?? 'amount';
+    form.commission_value = p.commission_value ? Number(p.commission_value) : null;
 
     form.retail_price = p.prices.find((x) => x.price_list_id === defaultList.value?.id)?.price ?? null;
     const tiers = emptyTiers();
@@ -257,7 +277,7 @@ function openEdit(p) {
 }
 
 function submit() {
-    if (hasConflict.value || qtyConflict.value) return;
+    if (hasConflict.value || qtyConflict.value || commissionProblem.value) return;
 
     form.transform((data) => {
         const payload = {
@@ -273,6 +293,8 @@ function submit() {
             track_stock: data.track_stock,
             min_stock: data.track_stock ? (data.min_stock ?? 0) : 0,
             cost_price: data.cost_price ?? 0,
+            commission_type: data.commission_type,
+            commission_value: data.commission_value ?? 0,
             // Bảng giá mặc định (bán lẻ) đứng đầu, sau đó là các bảng giá khác; số lượng chỉ gửi khi bật tự động chuyển giá
             prices: [
                 { price_list_id: defaultList.value?.id, price: data.retail_price },
@@ -345,6 +367,8 @@ function duplicate(p) {
     form.track_stock = p.track_stock;
     form.min_stock = p.min_stock ? Number(p.min_stock) : null;
     form.cost_price = p.cost_price ? Number(p.cost_price) : null;
+    form.commission_type = p.commission_type ?? 'amount';
+    form.commission_value = p.commission_value ? Number(p.commission_value) : null;
     form.retail_price = p.prices.find((x) => x.price_list_id === defaultList.value?.id)?.price ?? null;
     const tiers = emptyTiers();
     p.prices.forEach((x) => {
@@ -649,7 +673,9 @@ const subline = (p) => [p.code, p.category, p.unit].filter(Boolean).join(' · ')
                         <small v-if="err('unit_id')" class="field-error">{{ err('unit_id') }}</small>
                     </div>
                     <div class="field">
-                        <label for="p-code">Mã sản phẩm</label>
+                        <FieldLabel for="p-code">Mã sản phẩm
+                            <template v-if="!editing" #help>Bỏ trống để tự động đánh số.</template>
+                        </FieldLabel>
                         <InputText
                             id="p-code"
                             v-model="form.code"
@@ -662,7 +688,6 @@ const subline = (p) => [p.code, p.category, p.unit].filter(Boolean).join(' · ')
                         />
                         <small v-if="err('code')" class="field-error">{{ err('code') }}</small>
                         <FieldStatus v-else :status="codeCheck.status" :message="codeCheck.message" />
-                        <small v-if="!err('code') && codeCheck.status === 'idle' && !editing" class="field-hint">Bỏ trống để tự động đánh số.</small>
                     </div>
                     <div class="field">
                         <label for="p-barcode">Mã vạch</label>
@@ -678,30 +703,17 @@ const subline = (p) => [p.code, p.category, p.unit].filter(Boolean).join(' · ')
                         <small v-if="err('barcode')" class="field-error">{{ err('barcode') }}</small>
                         <FieldStatus v-else :status="barcodeCheck.status" :message="barcodeCheck.message" />
                     </div>
-                    <div class="field pr-tax">
-                        <label for="p-tax-on">Thuế</label>
-                        <div class="pr-tax-row">
-                            <Checkbox v-model="form.tax_enabled" inputId="p-tax-on" binary />
-                            <label for="p-tax-on" class="pr-tax-label">Sản phẩm chịu thuế</label>
-                            <Select
-                                v-if="form.tax_enabled"
-                                v-model="form.tax_rate"
-                                inputId="p-tax"
-                                :options="taxOptions"
-                                optionLabel="label"
-                                optionValue="value"
-                                aria-label="Thuế suất"
-                                class="pr-tax-select"
-                                :invalid="!!err('tax_rate')"
-                            />
-                        </div>
-                        <small v-if="err('tax_rate')" class="field-error">{{ err('tax_rate') }}</small>
-                    </div>
                 </div>
 
                 <!-- Giá bán -->
                 <section class="pr-section" aria-labelledby="p-price-title">
-                    <h3 id="p-price-title" class="pr-section-title">Giá bán</h3>
+                    <h3 id="p-price-title" class="pr-section-title">
+                        Giá bán
+                        <HelpTip>
+                            <template v-if="tierLists.length">Các bảng giá này luôn chọn thủ công được khi bán, kể cả chưa đủ số lượng.</template>
+                            <template v-else>Muốn bán nhiều loại giá (ví dụ "Giá sỉ"), hãy thêm bảng giá trong Danh mục &amp; đơn vị, tab Bảng giá.</template>
+                        </HelpTip>
+                    </h3>
 
                     <!-- Lưới 2 cột: bảng giá ở cột trái, số lượng tự chuyển ở cột phải -->
                     <div class="pr-prices">
@@ -718,6 +730,7 @@ const subline = (p) => [p.code, p.category, p.unit].filter(Boolean).join(' · ')
                             aria-required="true"
                             fluid
                             :invalid="!!err('prices.0.price')"
+                            @input="onRetailInput"
                         />
                         <small v-if="err('prices.0.price')" class="field-error">{{ err('prices.0.price') }}</small>
                     </div>
@@ -764,34 +777,69 @@ const subline = (p) => [p.code, p.category, p.unit].filter(Boolean).join(' · ')
                         </div>
                     </template>
                     </div>
-                    <small v-if="tierLists.length" class="field-hint pr-hint-block">
-                        Các bảng giá này luôn chọn thủ công được khi bán, kể cả chưa đủ số lượng.
-                    </small>
-                    <p v-else class="field-hint">
-                        Muốn bán nhiều loại giá (ví dụ "Giá sỉ"), hãy thêm bảng giá trong Danh mục &amp; đơn vị, tab Bảng giá.
-                    </p>
 
                     <template v-if="tierLists.length">
                         <div class="pr-check pr-auto">
                             <Checkbox v-model="form.qty_pricing" inputId="p-qty" binary />
                             <label for="p-qty">Tự động chuyển giá theo số lượng</label>
+                            <HelpTip>Khi số lượng bán từ mức đã nhập trở lên, màn hình bán hàng hỏi có áp dụng giá đó không. Để trống số lượng nếu bảng giá đó chỉ chọn thủ công.</HelpTip>
                         </div>
-                        <small v-if="form.qty_pricing" class="field-hint pr-hint-block">
-                            Khi số lượng bán từ mức đã nhập trở lên, màn hình bán hàng hỏi có áp dụng giá đó không. Để trống số lượng nếu bảng giá đó chỉ chọn thủ công.
-                        </small>
                         <small v-if="err('qty_pricing')" class="field-error pr-hint-block">{{ err('qty_pricing') }}</small>
                     </template>
+
+                    <div class="field pr-tax">
+                        <div class="pr-tax-row">
+                            <Checkbox v-model="form.tax_enabled" inputId="p-tax-on" binary />
+                            <label for="p-tax-on" class="pr-tax-label">Sản phẩm chịu thuế</label>
+                            <Select
+                                v-if="form.tax_enabled"
+                                v-model="form.tax_rate"
+                                inputId="p-tax"
+                                :options="taxOptions"
+                                optionLabel="label"
+                                optionValue="value"
+                                aria-label="Thuế suất"
+                                class="pr-tax-select"
+                                :invalid="!!err('tax_rate')"
+                            />
+                        </div>
+                        <small v-if="err('tax_rate')" class="field-error">{{ err('tax_rate') }}</small>
+                    </div>
+                </section>
+
+                <!-- Hoa hồng nhân viên -->
+                <section class="pr-section" aria-labelledby="p-commission-title">
+                    <h3 id="p-commission-title" class="pr-section-title">
+                        Hoa hồng nhân viên
+                        <HelpTip>Hoa hồng hiển thị ở đây tính trên giá bán lẻ. Khi bán, hệ thống tính lại theo giá bán thực tế của từng dòng và không vượt quá giá đó.</HelpTip>
+                    </h3>
+                    <CommissionField
+                        :type="form.commission_type"
+                        :value="form.commission_value"
+                        :price="liveRetail"
+                        priceLabel="giá bán lẻ"
+                        :error="err('commission_value')"
+                        inputId="p-quota"
+                        @update:type="onCommissionType"
+                        @update:value="(v) => (form.commission_value = v)"
+                        @problem="(m) => (commissionProblem = m)"
+                    />
                 </section>
 
                 <!-- Tồn kho -->
                 <section class="pr-section" aria-labelledby="p-stock-title">
-                    <h3 id="p-stock-title" class="pr-section-title">Tồn kho</h3>
+                    <h3 id="p-stock-title" class="pr-section-title">
+                        Tồn kho
+                        <HelpTip>Bật thì khi bán sẽ trừ kho; mặc định không cho bán quá số lượng tồn (cửa hàng có thể cho phép tồn âm ở trang Tồn kho, mục Cài đặt). Tồn đầu kỳ nhập bằng phiếu nhập kho. Tắt thì không theo dõi số lượng.</HelpTip>
+                    </h3>
                     <div class="pr-check">
                         <Checkbox v-model="form.track_stock" inputId="p-track" binary />
                         <label for="p-track">Quản lý tồn kho</label>
                     </div>
                     <div v-if="form.track_stock" class="field">
-                        <label for="p-min">Tồn tối thiểu ({{ unitName }})</label>
+                        <FieldLabel for="p-min">Tồn tối thiểu ({{ unitName }})
+                            <template #help>Tồn từ mức này trở xuống sẽ báo "sắp hết". Để 0 nếu không cần cảnh báo.</template>
+                        </FieldLabel>
                         <InputNumber
                             v-model="form.min_stock"
                             inputId="p-min"
@@ -803,11 +851,7 @@ const subline = (p) => [p.code, p.category, p.unit].filter(Boolean).join(' · ')
                             :invalid="!!err('min_stock')"
                         />
                         <small v-if="err('min_stock')" class="field-error">{{ err('min_stock') }}</small>
-                        <small v-else class="field-hint">Tồn từ mức này trở xuống sẽ báo "sắp hết". Để 0 nếu không cần cảnh báo.</small>
                     </div>
-                    <small class="field-hint pr-hint-block">
-                        Bật thì khi bán sẽ trừ kho và không cho bán quá số lượng tồn. Tồn đầu kỳ nhập bằng phiếu nhập kho. Tắt thì không theo dõi số lượng.
-                    </small>
                 </section>
 
                 <div class="field">
@@ -822,7 +866,7 @@ const subline = (p) => [p.code, p.category, p.unit].filter(Boolean).join(' · ')
 
                 <div class="dialog-actions">
                     <Button type="button" label="Hủy" severity="secondary" outlined @click="dialog = false" />
-                    <Button type="submit" :label="editing ? 'Lưu thay đổi' : 'Thêm sản phẩm'" :loading="form.processing" :disabled="hasConflict || qtyConflict" />
+                    <Button type="submit" :label="editing ? 'Lưu thay đổi' : 'Thêm sản phẩm'" :loading="form.processing" :disabled="hasConflict || qtyConflict || !!commissionProblem" />
                 </div>
             </form>
         </AppDialog>
@@ -875,6 +919,7 @@ const subline = (p) => [p.code, p.category, p.unit].filter(Boolean).join(' · ')
 .pr-tax-row { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; min-height: 2.75rem; }
 .pr-tax-label { font-weight: 400; }
 .pr-tax-select { width: 6.5rem; }
+.pr-tax { margin-top: 0.5rem; }
 .pr-link { padding: 0; border: 0; background: none; color: inherit; font: inherit; font-weight: 600; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
 .pr-link:hover { color: var(--app-primary); text-decoration: underline; }
 .pr-link:focus-visible { outline: 2px solid var(--app-primary); outline-offset: 2px; border-radius: 0.3rem; }

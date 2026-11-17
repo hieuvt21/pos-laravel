@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import Button from 'primevue/button';
 import Password from 'primevue/password';
+import FieldLabel from '@/Components/FieldLabel.vue';
 
 const currentRef = ref(null);
 const newRef = ref(null);
@@ -36,9 +37,6 @@ function updatePassword() {
 
 <template>
     <form novalidate @submit.prevent="updatePassword">
-        <p class="field-hint" style="margin: 0 0 1rem">
-            Nên dùng mật khẩu dài và khó đoán để giữ tài khoản an toàn.
-        </p>
 
         <div class="field">
             <label for="pw-current">Mật khẩu hiện tại <span class="app-req" aria-hidden="true">*</span></label>
@@ -56,7 +54,9 @@ function updatePassword() {
         </div>
 
         <div class="field">
-            <label for="pw-new">Mật khẩu mới <span class="app-req" aria-hidden="true">*</span></label>
+            <FieldLabel for="pw-new">Mật khẩu mới <span class="app-req" aria-hidden="true">*</span>
+                <template #help>Tối thiểu 6 ký tự. Nên dùng mật khẩu dài và khó đoán để giữ tài khoản an toàn.</template>
+            </FieldLabel>
             <Password
                 ref="newRef"
                 v-model="form.password"
@@ -68,7 +68,6 @@ function updatePassword() {
                 :invalid="!!form.errors.password"
             />
             <small v-if="form.errors.password" class="field-error">{{ form.errors.password }}</small>
-            <small v-else class="field-hint">Tối thiểu 6 ký tự.</small>
         </div>
 
         <div class="field">

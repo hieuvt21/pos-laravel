@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import Button from 'primevue/button';
 import UserAvatar from '@/Components/UserAvatar.vue';
+import HelpTip from '@/Components/HelpTip.vue';
 
 const props = defineProps({
     name: { type: String, default: '' },
@@ -82,6 +83,7 @@ onBeforeUnmount(() => setBlob(null));
             <UserAvatar :name="name" :url="previewUrl" size="xlarge" />
             <div class="avatar-actions">
                 <Button type="button" label="Tải ảnh lên" icon="pi pi-upload" size="small" severity="secondary" outlined @click="input.click()" />
+                <HelpTip>JPG, PNG hoặc WebP, tối đa 2 MB.</HelpTip>
                 <Button v-if="previewUrl" type="button" label="Xóa ảnh" icon="pi pi-times" size="small" severity="danger" text @click="clear" />
             </div>
             <input ref="input" type="file" accept="image/png,image/jpeg,image/webp" hidden @change="onFile" />
@@ -92,7 +94,6 @@ onBeforeUnmount(() => setBlob(null));
             Chọn ảnh có sẵn
         </button>
         <template v-if="open">
-        <p class="field-hint" style="margin: 0.4rem 0 0">JPG, PNG hoặc WebP, tối đa 2 MB.</p>
         <div id="avatar-presets" class="avatar-grid" role="group" aria-label="Ảnh đại diện có sẵn">
             <button
                 v-for="p in presets"

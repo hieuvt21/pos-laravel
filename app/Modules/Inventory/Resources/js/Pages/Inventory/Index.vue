@@ -16,6 +16,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import { useMoney } from '@/composables/useMoney';
 import { usePermission } from '@/composables/usePermission';
 import StockCard from './Partials/StockCard.vue';
+import HelpTip from '@/Components/HelpTip.vue';
 import './inventory.css';
 
 const props = defineProps({
@@ -314,13 +315,10 @@ function saveSettings() {
             <form novalidate @submit.prevent="saveSettings">
                 <div class="field" style="flex-direction: row; align-items: flex-start; gap: 0.6rem">
                     <Checkbox v-model="settingsForm.allow_negative" inputId="iv-neg" binary />
-                    <label for="iv-neg">
-                        Cho phép bán và xuất quá số tồn (tồn âm)
-                        <small class="field-hint" style="display: block; margin-top: 0.25rem">
-                            Tắt (khuyên dùng): hệ thống chặn bán khi không đủ hàng. Bật: vẫn bán được và tồn có thể xuống dưới 0, màn bán hàng sẽ
-                            cảnh báo. Khi nhập hàng sau đó, giá vốn lấy theo giá nhập mới.
-                        </small>
-                    </label>
+                    <label for="iv-neg">Cho phép bán và xuất quá số tồn (tồn âm)</label>
+                    <HelpTip>
+                        Tắt (khuyên dùng): hệ thống chặn bán khi không đủ hàng. Bật: vẫn bán được và tồn có thể xuống dưới 0, màn bán hàng sẽ cảnh báo. Khi nhập hàng sau đó, giá vốn lấy theo giá nhập mới.
+                    </HelpTip>
                 </div>
                 <small v-if="settingsForm.errors.allow_negative" class="field-error">{{ settingsForm.errors.allow_negative }}</small>
 
