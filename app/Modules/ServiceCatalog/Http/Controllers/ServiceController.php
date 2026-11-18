@@ -8,6 +8,7 @@ use App\Modules\Core\Support\DocumentNumber;
 use App\Modules\Core\Support\UniqueName;
 use App\Modules\ServiceCatalog\Models\Service;
 use App\Modules\ServiceCatalog\Models\ServiceCategory;
+use App\Modules\ServiceCatalog\Models\ServicePackage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -89,6 +90,12 @@ class ServiceController extends Controller
 
     public function destroy(Service $service): RedirectResponse
     {
+        // Dịch vụ đang nằm trong combo / liệu trình (chưa xóa) thì giữ lại để gói không bị hỏng
+        $package = ServicePackage::whereHas('items', fn ($q) => $q->where('service_id', $service->id))->first();
+        if ($package) {
+            return back()->with('error', "Dịch vụ này đang nằm trong gói \"{$package->name}\" nên không xóa được. Hãy bỏ dịch vụ khỏi gói trước.");
+        }
+
         $service->delete(); // xóa mềm: hóa đơn cũ vẫn xem lại được
 
         return back()->with('success', 'Đã xóa dịch vụ.');

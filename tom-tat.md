@@ -110,6 +110,7 @@ Core (nền tảng)  <- mọi module
 Catalog   <- Inventory, Purchasing, Sales
 Inventory <- Purchasing, Sales
 Customers <- Sales, Portal
+ServiceCatalog <- Packages (Bước B), Sales
 Purchasing -> Inventory | Sales -> Catalog, Inventory, Customers | Reports chỉ đọc
 ```
 
@@ -120,6 +121,7 @@ Purchasing -> Inventory | Sales -> Catalog, Inventory, Customers | Reports chỉ
 - [x] 3. Customers (khách hàng, giới tính, nhập/xuất Excel theo quyền) - code xong, chờ chạy thử
 - [ ] 4. Inventory: **(a) `StockService`, (b) Tồn kho + thẻ kho: đã chạy thử. (c) phiếu nhập/xuất, (d) kiểm kho, (e) huy hiệu "sắp hết" + nhập Excel tồn đầu kỳ: code xong, chờ chạy thử.** Module hoàn chỉnh theo kế hoạch. Xem `docs/modules/inventory.md`
 - [ ] Dịch vụ (module `ServiceCatalog`, làm trước Bán hàng): **code xong, chờ chạy thử.** Danh mục dịch vụ riêng, dịch vụ giá cố định (không đơn vị, không tồn kho), hoa hồng nhân viên tính từ một ô định mức (₫ hoặc %, tối đa 100%). Xem `docs/modules/service-catalog.md`
+- [ ] Combo và Liệu trình (Bước A, trong module `ServiceCatalog`): **mẫu gói bán trước, code xong, chờ chạy thử.** Combo = 1 dịch vụ nhiều lần, Liệu trình = nhiều dịch vụ; giới hạn theo số lần và/hoặc hạn sử dụng (tính từ ngày mua); bảo hành sau khi dùng hết gói. Xem `docs/modules/service-catalog.md`. **Bước B** (module `Packages`: gói của khách, trừ buổi, hết hạn, bảo hành, gia hạn/tặng buổi) làm cùng Bán hàng.
 - [ ] 5. Purchasing -> 6. Sales/POS (+ mẫu hoá đơn, phương thức thanh toán, chính sách giảm giá/hoàn trả) -> 7. Ca làm việc -> 8. Portal (cổng khách) -> 9. Báo cáo -> 10. Sao lưu, nhật ký hoạt động, tối ưu
 
 ## 9. Quyết định đã chốt
@@ -147,8 +149,15 @@ Purchasing -> Inventory | Sales -> Catalog, Inventory, Customers | Reports chỉ
 | 19 | Dịch vụ bắt buộc thuộc một danh mục dịch vụ đang sử dụng | Báo cáo và Bán hàng sau này nhóm theo danh mục; tránh dịch vụ "không phân loại" |
 | 20 | Sản phẩm cũng có hoa hồng nhân viên bằng ô "định mức" (₫ hoặc %) như Dịch vụ; hoa hồng hiển thị tính trên giá bán lẻ, khi bán tính lại theo giá bán thực tế | Sản phẩm có nhiều bảng giá nên cần một giá chuẩn để hiển thị; số tiền không lưu |
 | 21 | Tính hoa hồng dùng chung: `Core\Support\Commission` (PHP) và `Components/CommissionField.vue` (giao diện) | Catalog không phụ thuộc module Dịch vụ; một quy tắc duy nhất cho cả hai |
+| 22 | Combo và Liệu trình dùng chung một mô hình (`service_packages` + `service_package_items`, cột `type`), dùng chung danh mục dịch vụ; mẫu gói ở `ServiceCatalog`, gói của khách ở module `Packages` (Bước B) | Combo chỉ là gói 1 dịch vụ; tách mẫu và gói đã bán để đúng ranh giới module |
+| 23 | Gói phải có ít nhất một giới hạn: không có hạn sử dụng thì mọi dịch vụ phải có số lần; có hạn thì được không giới hạn số lần. Hạn tính từ ngày mua, hết hạn không hoàn tiền | Gói không giới hạn cả hai thì vô nghĩa; hạn tính từ ngày mua rõ ràng nhất |
+| 24 | Bảo hành tính theo số ngày từ lúc dùng hết gói; mỗi lượt bảo hành vẫn ghi lịch sử, không trừ buổi, mặc định không hoa hồng | Theo yêu cầu cửa hàng; vẫn theo dõi được |
+| 25 | Hoa hồng gói có hai loại: người BÁN (tính trên giá gói) và người THỰC HIỆN khi dùng (tính trên giá lẻ của dịch vụ). Liệu trình chọn "theo từng dịch vụ" (mặc định theo định mức dịch vụ) hoặc "hoa hồng chung"; combo luôn theo dịch vụ | Tính trên giá lẻ để dòng không giới hạn số lần không cần phân bổ giá gói |
+| 26 | Hết hạn tính khi đọc (so `expires_at` với hiện tại), không dùng cron; sửa sai bằng dòng đảo trong sổ chỉ thêm, không xóa | cPanel không SSH/cron chắc chắn; giống quyết định #12 của kho |
 
 ## 10. Việc đang làm / bước tiếp theo
+
+- Vừa xong (chờ chạy thử): Combo và Liệu trình, Bước A (mẫu gói) trong `ServiceCatalog`: migration `2026_11_18_100001` (`service_packages`, `service_package_items`), `ServicePackage`, `ServicePackageItem`, `ServicePackageController` (route `service_combos.index`, `service_courses.index`, `service_packages.check|store|update|destroy`), trang `Services/Packages.vue` dùng chung (prop `type`), menu Combo và Liệu trình trong nhóm Dịch vụ, quyền `service_packages.*`, khóa số `service_package` (GOI), `ServiceCatalogService::findPackage|searchPackages|packageArray`. Chặn xóa dịch vụ đang nằm trong gói và danh mục còn gói (sửa `ServiceController::destroy`, `ServiceCategoryController::destroy`). Test mới `ServicePackageTest`; `ServiceTest` (menu) đã cập nhật. Chưa chạy được Pest, Pint, `npm run build` ở môi trường soạn code (chỉ kiểm cú pháp PHP bằng `php -l`; file Vue chưa biên dịch thử).
 
 - Vừa xong (chờ chạy thử): chú thích gom vào biểu tượng ? (`HelpTip`, `FieldLabel`) ở mọi form: sản phẩm, hoa hồng, tồn kho, cài đặt kho, giao diện, cửa hàng, hạng thành viên, khách hàng, người dùng, vai trò, hồ sơ, đổi mật khẩu, avatar, nhà cung cấp, danh mục dịch vụ. Form sản phẩm: mục Thuế (bỏ tiêu đề "Thuế") dời xuống dưới "Tự động chuyển giá theo số lượng" trong khối Giá bán.
 
@@ -173,7 +182,7 @@ Purchasing -> Inventory | Sales -> Catalog, Inventory, Customers | Reports chỉ
 - Vừa xong (chờ chạy thử): module Customers (danh sách, thêm/sửa/xóa mềm, chọn giới tính -> ảnh nam/nữ, nhập/xuất Excel, `CustomerService`). Xem `docs/modules/customers.md`.
 
 - Đang làm: chạy thử Core trên Laragon (đăng nhập `admin`/`admin` -> đổi mật khẩu -> các trang Core).
-- Tiếp theo: chạy thử Dịch vụ và Nhà cung cấp (`php artisan migrate`, `pos:sync`, `npm run build`, `pest`), 0b (deploy thử), rồi Bán hàng/POS (bán chung sản phẩm và dịch vụ; ghi hoa hồng nhân viên theo dòng dịch vụ).
+- Tiếp theo: chạy thử Dịch vụ, Combo/Liệu trình và Nhà cung cấp (`php artisan migrate`, `pos:sync`, `npm run build`, `pest`, `pint`), 0b (deploy thử), rồi Bán hàng/POS (bán chung sản phẩm, dịch vụ và gói; ghi hoa hồng nhân viên theo dòng dịch vụ) cùng với Bước B module `Packages` (gói của khách, trừ buổi, hết hạn, bảo hành, gia hạn/tặng buổi; thiết kế ở `docs/modules/service-catalog.md`).
 - Còn mở: chưa có nhật ký hoạt động (activitylog); `useUniqueCheck` còn nhắc route `customers.check`/`products.check` (sẽ có khi làm module tương ứng); bước tải FTP trong workflow đang dùng `--insecure` (bỏ kiểm tra chứng chỉ) nên đổi nếu host có chứng chỉ hợp lệ.
 
 ## 11. Làm việc với AI

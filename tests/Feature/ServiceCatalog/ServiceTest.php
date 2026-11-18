@@ -292,6 +292,6 @@ it('menu: nhóm Dịch vụ nằm giữa Sản phẩm và Kho; thu ngân chỉ t
     expect(array_search('Khách hàng', $labels, true))->toBeLessThan(array_search('Sản phẩm', $labels, true))
         ->and(array_search('Sản phẩm', $labels, true))->toBeLessThan(array_search('Dịch vụ', $labels, true))
         ->and(array_search('Dịch vụ', $labels, true))->toBeLessThan(array_search('Kho', $labels, true))
-        ->and(collect($nav($this->manager)->firstWhere('label', 'Dịch vụ')['items'])->pluck('route')->all())->toBe(['services.index', 'service_categories.index'])
-        ->and(collect($nav(svUser('cashier'))->firstWhere('label', 'Dịch vụ')['items'])->pluck('route')->all())->toBe(['services.index']);
+        ->and(collect($nav($this->manager)->firstWhere('label', 'Dịch vụ')['items'])->pluck('route')->all())->toBe(['services.index', 'service_categories.index', 'service_combos.index', 'service_courses.index'])
+        ->and(collect($nav(svUser('cashier'))->firstWhere('label', 'Dịch vụ')['items'])->pluck('route')->all())->toBe(['services.index', 'service_combos.index', 'service_courses.index']);
 });

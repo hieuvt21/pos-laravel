@@ -35,6 +35,7 @@ class DocumentNumber
         'shift' => ['label' => 'Ca làm việc', 'prefix' => 'CA', 'date_format' => 'yymmdd', 'padding' => 3],
         'product' => ['label' => 'Mã sản phẩm', 'prefix' => 'SP', 'date_format' => 'none', 'padding' => 5],
         'service' => ['label' => 'Mã dịch vụ', 'prefix' => 'DV', 'date_format' => 'none', 'padding' => 4],
+        'service_package' => ['label' => 'Mã combo / liệu trình', 'prefix' => 'GOI', 'date_format' => 'none', 'padding' => 4],
         'customer' => ['label' => 'Mã khách hàng', 'prefix' => 'KH', 'date_format' => 'none', 'padding' => 5],
         'supplier' => ['label' => 'Mã nhà cung cấp', 'prefix' => 'NCC', 'date_format' => 'none', 'padding' => 4],
     ];

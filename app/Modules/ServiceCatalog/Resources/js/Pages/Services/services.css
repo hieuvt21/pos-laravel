@@ -17,6 +17,18 @@
 .sv-card-row { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
 .sv-card-row span { color: var(--app-muted); font-size: 0.86rem; }
 
+/* Combo / Liệu trình (Packages.vue) */
+.pk-lines { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.25rem; }
+.pk-lines li { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; font-size: 0.92rem; }
+.pk-items { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem; }
+.pk-item { padding: 0.75rem 0.85rem 0.25rem; border: 1px solid var(--app-glass-border); border-radius: 14px; background: rgba(255, 255, 255, 0.55); }
+.pk-item-head { display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.6rem; }
+.pk-item-head .p-select { flex: 1 1 auto; min-width: 0; }
+.pk-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: 0 0.75rem; }
+.pk-summary { display: block; color: var(--app-muted); font-size: 0.84rem; }
+.pk-saving { color: var(--app-primary); }
+.pk-before-cf { margin: 0 0 0.35rem; font-weight: 600; }
+
 @media (max-width: 639px) {
     .sv-grid { grid-template-columns: 1fr; padding: 0.75rem; gap: 0.75rem; }
 }

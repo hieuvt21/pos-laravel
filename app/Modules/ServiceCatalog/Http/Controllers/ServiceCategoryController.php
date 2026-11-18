@@ -65,6 +65,11 @@ class ServiceCategoryController extends Controller
             return back()->with('error', 'Danh mục này đang có dịch vụ nên không xóa được. Hãy chuyển dịch vụ sang danh mục khác hoặc bỏ chọn "Đang sử dụng".');
         }
 
+        // Combo / liệu trình dùng chung danh mục dịch vụ
+        if ($category->packages()->withTrashed()->exists()) {
+            return back()->with('error', 'Danh mục này đang có combo hoặc liệu trình nên không xóa được. Hãy chuyển gói sang danh mục khác hoặc bỏ chọn "Đang sử dụng".');
+        }
+
         $category->delete();
 
         return back()->with('success', 'Đã xóa danh mục dịch vụ.');
